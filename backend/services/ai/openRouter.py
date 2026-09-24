@@ -5,18 +5,21 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-from google import genai
+from openai import OpenAI
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is missing")
+if not OPENROUTER_API_KEY:
+    raise RuntimeError("OPENROUTER_API_KEY is missing")
 
 
-client = genai.Client(
-    api_key=GEMINI_API_KEY
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=OPENROUTER_API_KEY,
 )
 
 
@@ -280,20 +283,20 @@ async def generate_summary(data: ResumeRequest):
         """
 
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
 
 
-        if not response.text:
+        if not response.choices[0].message.content:
             raise HTTPException(
                 status_code=500,
-                detail="Gemini returned an empty response"
+                detail="OpenRouter returned an empty response"
             )
 
 
-        summary = response.text.strip()
+        summary = response.choices[0].message.content.strip()
 
 
         if (
@@ -316,7 +319,7 @@ async def generate_summary(data: ResumeRequest):
     except Exception as error:
 
         print(
-            "Gemini error:",
+            "OpenRouter error:",
             error
         )
 
@@ -460,20 +463,20 @@ Return ONLY valid JSON:
 }}
 """
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        if not response.text:
+        if not response.choices[0].message.content:
             raise HTTPException(
                 status_code=500,
-                detail="Gemini returned an empty response"
+                detail="OpenRouter returned an empty response"
             )
 
-        result_text = response.text.strip()
+        result_text = response.choices[0].message.content.strip()
 
-        # Remove markdown code fences if Gemini adds them
+        # Remove markdown code fences if OpenRouter adds them
         if result_text.startswith("```json"):
             result_text = result_text[7:]
 
@@ -489,11 +492,11 @@ Return ONLY valid JSON:
             analysis = json.loads(result_text)
 
         except json.JSONDecodeError:
-            print("Invalid Gemini JSON:", result_text)
+            print("Invalid OpenRouter JSON:", result_text)
 
             raise HTTPException(
                 status_code=500,
-                detail="Gemini returned invalid analysis format"
+                detail="OpenRouter returned invalid analysis format"
             )
 
         # Make sure empty optional sections stay empty
@@ -1317,8 +1320,8 @@ async def optimize_resume(data: ResumeRequest):
                     "school": "",
                     "degreeField": "",
                     "location": "",
-                    "original": "",
-                    "optimized": "",
+                    "schoolYear": "",
+                    "description": "",
                     "reason": ""
                 }}
             ],
@@ -1362,19 +1365,19 @@ async def optimize_resume(data: ResumeRequest):
         }}
         """
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        if not response.text:
+        if not response.choices[0].message.content:
 
             raise HTTPException(
                 status_code=500,
-                detail="Gemini returned an empty response"
+                detail="OpenRouter returned an empty response"
             )
 
-        result_text = response.text.strip()
+        result_text = response.choices[0].message.content.strip()
 
         if result_text.startswith("```json"):
 
@@ -1399,13 +1402,13 @@ async def optimize_resume(data: ResumeRequest):
         except json.JSONDecodeError:
 
             print(
-                "Invalid Gemini JSON:",
+                "Invalid OpenRouter JSON:",
                 result_text
             )
 
             raise HTTPException(
                 status_code=500,
-                detail="Gemini returned invalid optimization format"
+                detail="OpenRouter returned invalid optimization format"
             )
 
         return {
@@ -1550,7 +1553,7 @@ Keep the questions appropriate for the target job.
 """
 
         # -----------------------------
-        # GEMINI PROMPT
+        # OPENROUTER PROMPT
         # -----------------------------
 
         prompt = f"""
@@ -1599,12 +1602,12 @@ Use exactly this structure:
 }}
 """
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        response_text = response.text.strip()
+        response_text = response.choices[0].message.content.strip()
 
         # -----------------------------
         # CLEAN JSON
@@ -1720,7 +1723,7 @@ Do not invent observations about:
 """
 
         # -----------------------------
-        # GEMINI PROMPT
+        # OPENROUTER PROMPT
         # -----------------------------
 
         prompt = f"""
@@ -1817,12 +1820,12 @@ Use exactly this structure:
 }}
 """
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        response_text = response.text.strip()
+        response_text = response.choices[0].message.content.strip()
 
         # -----------------------------
         # CLEAN JSON
@@ -1944,7 +1947,7 @@ async def analyze_interview_session(
             )
 
         # -----------------------------
-        # GEMINI PROMPT
+        # OPENROUTER PROMPT
         # -----------------------------
 
         questions_json = json.dumps(
@@ -2020,12 +2023,12 @@ Use exactly this structure:
 }}
 """
 
-        response = client.models.generate_content(
-            model="gemini-3.6-flash",
-            contents=prompt
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        response_text = response.text.strip()
+        response_text = response.choices[0].message.content.strip()
 
         # -----------------------------
         # CLEAN JSON
@@ -2112,5 +2115,5 @@ async def root():
 
     return {
         "success": True,
-        "message": "Gemini AI Resume Service is running"
+        "message": "OpenRouter AI Resume Service is running"
     }

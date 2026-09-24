@@ -92,15 +92,12 @@ export const resumePreviewHandler = ({
 
       console.log("PDF size:", result.arrayBuffer.byteLength, "bytes");
 
-      // ARRAY BUFFER → UINT8 ARRAY
       const bytes = new Uint8Array(result.arrayBuffer);
 
-      // UINT8 ARRAY → BASE64
       const base64 = fromByteArray(bytes);
 
       console.log("Base64 generated.");
 
-      // FILE PATH
       const fileUri = FileSystem.cacheDirectory + "resume.pdf";
 
       // SAVE PDF

@@ -8,7 +8,7 @@ const { sendPasswordResetOtp } = require("../services/emailService");
 
 const register = async (req, res) => {
   try {
-    const { fullName, email, password, confirmPassword } = req.body;
+    const { fullName, email, password, confirmPassword, termsAccepted } = req.body;
 
     const role = "user";
     const errors = {};
@@ -24,6 +24,10 @@ const register = async (req, res) => {
 
     if (!password) {
       errors.password = "Password is required";
+    }
+
+    if (!termsAccepted) {
+      errors.termsCondition = "You must agree to the Terms and Conditions";
     }
 
     if (!confirmPassword) {
@@ -57,6 +61,7 @@ const register = async (req, res) => {
     // Return validation errors
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors,
       });
@@ -67,6 +72,7 @@ const register = async (req, res) => {
 
     if (existingUser) {
       return res.status(409).json({
+        success: false,
         message: "Registration failed",
         errors: {
           email: "Email already exists",
@@ -84,9 +90,11 @@ const register = async (req, res) => {
       password: hashedPassword,
       role,
       isEnabled: true,
+      termsAccepted,
     });
 
     return res.status(201).json({
+      success: true,
       message: "Registration successful",
       user: {
         _id: user._id,
@@ -94,6 +102,7 @@ const register = async (req, res) => {
         email: user.email,
         role: user.role,
         isEnabled: user.isEnabled,
+        termsAccepted: user.termsAccepted,
         createdAt: user.createdAt,
       },
     });
@@ -128,6 +137,7 @@ const login = async (req, res) => {
     // Return validation errors
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors,
       });
@@ -138,6 +148,7 @@ const login = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({
+        success: false,
         message: "Login failed",
         errors: {
           password: "Incorrect password",
@@ -148,6 +159,7 @@ const login = async (req, res) => {
     // Check if account is disabled
     if (!user.isEnabled) {
       return res.status(403).json({
+        success: false,
         message: "Login failed",
         errors: {
           general: "Your account has been disabled",
@@ -157,6 +169,7 @@ const login = async (req, res) => {
 
     if (user.role === "admin") {
       return res.status(403).json({
+        success: false,
         message: "Login failed",
         errors: {
           general: "Admin accounts cannot log in here",
@@ -169,6 +182,7 @@ const login = async (req, res) => {
 
     if (!isPasswordValid) {
       return res.status(401).json({
+        success: false,
         message: "Login failed",
         errors: {
           password: "Incorrect password",
@@ -190,6 +204,7 @@ const login = async (req, res) => {
 
     // Successful login
     return res.status(200).json({
+      success: true,
       message: "Login successful",
       token,
       user: {

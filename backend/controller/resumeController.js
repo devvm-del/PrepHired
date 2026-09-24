@@ -5,7 +5,7 @@ const {
   optimizeResume: optimizeResumeAI,
 } = require("../services/ai/aiService");
 
-const { generateResumePDF } = require("../services/resumePdfService");
+const { generateResumePDF } = require("../services/pdf/generateResumePDF");
 
 // CREATE DRAFT
 const createResume = async (req, res) => {
@@ -1192,7 +1192,7 @@ const optimizeResume = async (req, res) => {
       });
     }
     */
-
+    /*
     if (Array.isArray(optimization.educations)) {
       optimization.educations.forEach((optimizedEducation) => {
         const education = resume.educations.id(optimizedEducation.id);
@@ -1229,8 +1229,65 @@ const optimizeResume = async (req, res) => {
         }
       });
     }
+    */
+   if (Array.isArray(optimization.educations)) {
+    optimization.educations.forEach((optimizedEducation) => {
+      const education = resume.educations.id(
+        optimizedEducation.id
+      );
 
+      if (!education) {
+        return;
+      }
 
+      // IMPORTANT:
+      // Check the ORIGINAL education stored in resume.educations.
+      const originalDescription =
+        education.description?.trim() || "";
+
+      // Store the AI result separately.
+      // DO NOT modify resume.educations here.
+      optimizedEducation.school =
+        optimizedEducation.school ??
+        education.school;
+
+      optimizedEducation.degreeField =
+        optimizedEducation.degreeField ??
+        education.degreeField;
+
+      optimizedEducation.location =
+        optimizedEducation.location ??
+        education.location;
+
+      // NEVER allow AI to change the user's schoolYear.
+      optimizedEducation.schoolYear =
+        education.schoolYear || "";
+
+      // If user had NO original description,
+      // AI optimized description MUST remain empty.
+      if (!originalDescription) {
+        optimizedEducation.description = "";
+      }
+
+      // If user DID provide a description,
+      // the AI description can be stored.
+      if (
+        originalDescription &&
+        optimizedEducation.description === undefined
+      ) {
+        optimizedEducation.description =
+          originalDescription;
+      }
+    });
+
+    // Save ONLY to aiOptimization.
+    resume.aiOptimization.educations =
+      optimization.educations;
+  }
+
+   
+
+   
 
     if (optimization.skills?.optimized !== undefined) {
       resume.skills = optimization.skills.optimized;
@@ -1357,9 +1414,18 @@ const exportResumePDF = async (req, res) => {
 
     const pdf = await generateResumePDF(resume);
 
-    const fileName = `${(resume.basicInfo?.fullName || "resume")
-      .trim()
-      .replace(/[^a-zA-Z0-9]+/g, "_")}_Resume.pdf`;
+    const templateNames = {
+      classic: "Classic",
+      minimal: "Minimal",
+      modern: "Modern",
+      professional: "Professional",
+    };
+
+    const templateName =
+      templateNames[resume.template] || "Resume";
+
+    const fileName = `${templateName}_Resume.pdf`;
+   
 
     res.set({
       "Content-Type": "application/pdf",

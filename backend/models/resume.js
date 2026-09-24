@@ -260,13 +260,7 @@ const optimizedEducationSchema = new mongoose.Schema(
       default: "",
     },
 
-    original: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
-    optimized: {
+    description: {
       type: String,
       trim: true,
       default: "",
@@ -313,8 +307,7 @@ const optimizedEducationSchema = new mongoose.Schema(
       default: "",
     },
 
-    // AI OPTIMIZED DESCRIPTION
-    optimized: {
+    description: {
       type: String,
       trim: true,
       default: "",
@@ -328,6 +321,8 @@ const optimizedEducationSchema = new mongoose.Schema(
   },
   { _id: false },
 );
+
+
 
 const optimizedProjectSchema = new mongoose.Schema(
   {

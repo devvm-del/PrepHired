@@ -23,6 +23,9 @@ const ResumeHeader = ({
       resumeId,
     });
   };
+  const handleHome = () => {
+    navigation.navigate("Home");
+  };
 
   return (
     <View style={[styles.header, style]}>
@@ -53,6 +56,11 @@ const ResumeHeader = ({
           {resumeLabel}
         </Text>
       </View>
+      <TouchableOpacity style={styles.backButton} onPress={handleHome}>
+        <View>
+          <Ionicons name="home-outline" size={28} color="#F8FAFC" />
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };

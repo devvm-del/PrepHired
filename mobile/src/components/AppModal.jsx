@@ -42,20 +42,7 @@ export default function AppModal({ visible, message = "", onClose }) {
     }
 
     // Login rate limit
-    if (message.includes("Too many login attempts")) {
-      return {
-        icon: "time-outline",
-        color: "#b95715",
-        title: "Too Many Attempts",
-      };
-    }
-
-    // Registration rate limit
-    if (
-      message.includes(
-        "Too many registration attempts. Please try again after 15 minutes.",
-      )
-    ) {
+    if (message.includes("Please try again after 15 minutes.")) {
       return {
         icon: "time-outline",
         color: "#b95715",
@@ -135,7 +122,7 @@ export default function AppModal({ visible, message = "", onClose }) {
 
     if (message.includes("Failed to generate professional summary")) {
       return {
-        icon: "close-outline",
+        icon: "sad-outline",
         color: "#b95715",
         title: "Try Again",
       };
@@ -146,6 +133,14 @@ export default function AppModal({ visible, message = "", onClose }) {
         icon: "sad-outline",
         color: "#EF4444",
         title: "Access Denied",
+      };
+    }
+
+    if (message.includes("Failed to optimize resume")) {
+      return {
+        icon: "sad-outline",
+        color: "#EF4444",
+        title: "Try Again",
       };
     }
 

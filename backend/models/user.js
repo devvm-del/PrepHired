@@ -32,6 +32,13 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    // Terms and Conditions
+    termsAccepted: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+
     // Password reset
     resetOtpHash: {
       type: String,

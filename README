@@ -1,3 +1,5 @@
 //run python
 // python -m uvicorn geminiService:app --reload --port 8000
-// python -m uvicorn geminiService1:app --reload --port 8000
+
+// python -m uvicorn openRouter:app --reload --port 8000
+

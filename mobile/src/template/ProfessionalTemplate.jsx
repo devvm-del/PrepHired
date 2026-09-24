@@ -8,6 +8,9 @@ const ProfessionalTemplate = ({ resume, preview = false }) => {
 
   const fullName = resume?.basicInfo?.fullName || "Your Name";
 
+  const linkedInURL = resume?.basicInfo.linkedInURL;
+  const portfolioLink = resume?.basicInfo.portfolioLink;
+
   // ================================
   // BASIC INFO ADDRESS
   // ================================
@@ -153,10 +156,11 @@ const ProfessionalTemplate = ({ resume, preview = false }) => {
         backgroundColor: "#FFFFFF",
         width: 595,
         height: 300,
-        paddingStart: 15,
-        paddingEnd: 15,
+        marginTop: -30,
+        paddingStart: 20,
+        paddingEnd: 20,
         transform: [{ scale }],
-        transformOrigin: "center",
+        transformOrigin: "center"
       }}
     >
       {/* ========================================

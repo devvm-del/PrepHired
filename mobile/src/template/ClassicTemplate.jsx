@@ -2,20 +2,152 @@ import React from "react";
 import { View, Text } from "react-native";
 
 const ClassicTemplate = ({ resume, preview = false }) => {
-  const scale = preview ? 0.42 : 1;
+  const scale = preview ? 0.55 : 1;
+
+  const aiOptimization = resume?.aiOptimization;
+
+  const fullName = resume?.basicInfo?.fullName || "Your Name";
+
+  // ================================
+  // BASIC INFO
+  // ================================
+
+  const address =
+    aiOptimization?.address?.optimized ||
+    resume?.basicInfo?.address ||
+    "";
+
+  const professionalSummary =
+    aiOptimization?.professionalSummary?.optimized ||
+    resume?.professionalSummary ||
+    "";
+
+  const skills =
+    aiOptimization?.skills?.optimized ||
+    resume?.skills ||
+    "";
+
+  const certificates =
+    aiOptimization?.certificates?.optimized ||
+    resume?.certificates ||
+    "";
+
+  // ================================
+  // WORK EXPERIENCE
+  //
+  // JOB TITLE       = ORIGINAL
+  // COMPANY         = ORIGINAL
+  // LOCATION        = AI OPTIMIZED
+  // PERIOD          = ORIGINAL
+  // DESCRIPTION     = AI OPTIMIZED
+  // ================================
+
+  const workExperiences =
+    resume?.workExperiences?.map((experience) => {
+      const optimizedExperience =
+        aiOptimization?.workExperiences?.find(
+          (item) =>
+            String(item.id) === String(experience._id)
+        );
+
+      return {
+        ...experience,
+
+        location:
+          optimizedExperience?.location ||
+          experience.location ||
+          "",
+
+        description:
+          optimizedExperience?.optimized ||
+          experience.description ||
+          "",
+      };
+    }) || [];
+
+  // ================================
+  // EDUCATION
+  //
+  // DEGREE/FIELD = AI OPTIMIZED
+  // SCHOOL       = AI OPTIMIZED
+  // LOCATION     = AI OPTIMIZED
+  // SCHOOL YEAR  = ORIGINAL
+  // DESCRIPTION  = AI OPTIMIZED
+  // ================================
+
+  const educations =
+    aiOptimization?.educations?.length > 0
+      ? aiOptimization.educations.map((education) => ({
+          id: education.id || "",
+          degreeField: education.degreeField || "",
+          school: education.school || "",
+          location: education.location || "",
+          schoolYear: education.schoolYear || "",
+          description: education.optimized || "",
+        }))
+      : resume?.educations?.map((education) => ({
+          id: education._id || "",
+          degreeField: education.degreeField || "",
+          school: education.school || "",
+          location: education.location || "",
+          schoolYear: education.schoolYear || "",
+          description: education.description || "",
+        })) || [];
+
+  // ================================
+  // PROJECTS
+  //
+  // NAME        = AI OPTIMIZED WHEN AVAILABLE
+  // DESCRIPTION = AI OPTIMIZED WHEN AVAILABLE
+  // ================================
+
+  const projects =
+    resume?.projects
+      ?.filter(
+        (project) =>
+          project &&
+          (project.projectName?.trim() ||
+            project.projectDescription?.trim())
+      )
+      .map((project) => {
+        const optimizedProject =
+          aiOptimization?.projects?.find(
+            (item) =>
+              String(item.id) === String(project._id)
+          );
+
+        return {
+          ...project,
+
+          projectName:
+            optimizedProject?.projectName ||
+            project.projectName ||
+            "",
+
+          projectDescription:
+            optimizedProject?.optimized ||
+            project.projectDescription ||
+            "",
+        };
+      }) || [];
 
   return (
     <View
       style={{
         backgroundColor: "#FFFFFF",
-        width: 350,
-        minHeight: 842,
-        padding: 40,
+        width: 595,
+        height: 300,
+        marginTop: -30,
+        paddingStart: 20,
+        paddingEnd: 20,
         transform: [{ scale }],
-        transformOrigin: "top left",
+        transformOrigin: "center"
       }}
     >
-      {/* HEADER */}
+      {/* ========================================
+          HEADER
+      ======================================== */}
+
       <Text
         style={{
           fontSize: 28,
@@ -23,7 +155,7 @@ const ClassicTemplate = ({ resume, preview = false }) => {
           color: "#111827",
         }}
       >
-        {resume?.basicInfo?.fullName || "Your Name"}
+        {fullName}
       </Text>
 
       <Text
@@ -44,11 +176,42 @@ const ClassicTemplate = ({ resume, preview = false }) => {
         }}
       >
         {resume?.basicInfo?.email || ""}
-        {"  |  "}
+
+        {resume?.basicInfo?.email &&
+        resume?.basicInfo?.contactNumber
+          ? "  |  "
+          : ""}
+
         {resume?.basicInfo?.contactNumber || ""}
-        {"  |  "}
-        {resume?.basicInfo?.address || ""}
+
+        {address ? "  |  " : ""}
+
+        {address}
       </Text>
+
+      {resume?.basicInfo?.linkedInURL ? (
+        <Text
+          style={{
+            fontSize: 8,
+            color: "#2563EB",
+            marginTop: 3,
+          }}
+        >
+          {resume.basicInfo.linkedInURL}
+        </Text>
+      ) : null}
+
+      {resume?.basicInfo?.portfolioLink ? (
+        <Text
+          style={{
+            fontSize: 8,
+            color: "#2563EB",
+            marginTop: 3,
+          }}
+        >
+          {resume.basicInfo.portfolioLink}
+        </Text>
+      ) : null}
 
       <View
         style={{
@@ -59,8 +222,11 @@ const ClassicTemplate = ({ resume, preview = false }) => {
         }}
       />
 
-      {/* SUMMARY */}
-      {resume?.professionalSummary ? (
+      {/* ========================================
+          PROFESSIONAL SUMMARY
+      ======================================== */}
+
+      {professionalSummary ? (
         <View style={{ marginBottom: 18 }}>
           <Text
             style={{
@@ -80,13 +246,16 @@ const ClassicTemplate = ({ resume, preview = false }) => {
               color: "#374151",
             }}
           >
-            {resume.professionalSummary}
+            {professionalSummary}
           </Text>
         </View>
       ) : null}
 
-      {/* EXPERIENCE */}
-      {resume?.workExperiences?.length > 0 ? (
+      {/* ========================================
+          WORK EXPERIENCE
+      ======================================== */}
+
+      {workExperiences.length > 0 ? (
         <View style={{ marginBottom: 18 }}>
           <Text
             style={{
@@ -99,8 +268,13 @@ const ClassicTemplate = ({ resume, preview = false }) => {
             WORK EXPERIENCE
           </Text>
 
-          {resume.workExperiences.map((experience, index) => (
-            <View key={experience._id || index} style={{ marginBottom: 11 }}>
+          {workExperiences.map((experience, index) => (
+            <View
+              key={experience._id || index}
+              style={{
+                marginBottom: 11,
+              }}
+            >
               <View
                 style={{
                   flexDirection: "row",
@@ -108,6 +282,8 @@ const ClassicTemplate = ({ resume, preview = false }) => {
                   alignItems: "flex-start",
                 }}
               >
+                {/* LEFT */}
+
                 <View
                   style={{
                     flex: 1,
@@ -134,6 +310,8 @@ const ClassicTemplate = ({ resume, preview = false }) => {
                     {experience.company}
                   </Text>
                 </View>
+
+                {/* RIGHT */}
 
                 <View
                   style={{
@@ -185,8 +363,11 @@ const ClassicTemplate = ({ resume, preview = false }) => {
         </View>
       ) : null}
 
-      {/* EDUCATION */}
-      {resume?.educations?.length > 0 ? (
+      {/* ========================================
+          EDUCATION
+      ======================================== */}
+
+      {educations.length > 0 ? (
         <View style={{ marginBottom: 18 }}>
           <Text
             style={{
@@ -199,8 +380,13 @@ const ClassicTemplate = ({ resume, preview = false }) => {
             EDUCATION
           </Text>
 
-          {resume.educations.map((education, index) => (
-            <View key={education._id || index} style={{ marginBottom: 10 }}>
+          {educations.map((education, index) => (
+            <View
+              key={education.id || index}
+              style={{
+                marginBottom: 10,
+              }}
+            >
               <View
                 style={{
                   flexDirection: "row",
@@ -208,32 +394,40 @@ const ClassicTemplate = ({ resume, preview = false }) => {
                   alignItems: "flex-start",
                 }}
               >
+                {/* LEFT */}
+
                 <View
                   style={{
                     flex: 1,
                     paddingRight: 15,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      fontWeight: "bold",
-                      color: "#111827",
-                    }}
-                  >
-                    {education.degreeField}
-                  </Text>
+                  {education.degreeField ? (
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: "bold",
+                        color: "#111827",
+                      }}
+                    >
+                      {education.degreeField}
+                    </Text>
+                  ) : null}
 
-                  <Text
-                    style={{
-                      fontSize: 9,
-                      color: "#374151",
-                      marginTop: 2,
-                    }}
-                  >
-                    {education.school}
-                  </Text>
+                  {education.school ? (
+                    <Text
+                      style={{
+                        fontSize: 9,
+                        color: "#374151",
+                        marginTop: 2,
+                      }}
+                    >
+                      {education.school}
+                    </Text>
+                  ) : null}
                 </View>
+
+                {/* RIGHT */}
 
                 <View
                   style={{
@@ -285,8 +479,11 @@ const ClassicTemplate = ({ resume, preview = false }) => {
         </View>
       ) : null}
 
-      {/* SKILLS */}
-      {resume?.skills ? (
+      {/* ========================================
+          SKILLS
+      ======================================== */}
+
+      {skills ? (
         <View style={{ marginBottom: 18 }}>
           <Text
             style={{
@@ -306,13 +503,16 @@ const ClassicTemplate = ({ resume, preview = false }) => {
               lineHeight: 13,
             }}
           >
-            {resume.skills}
+            {skills}
           </Text>
         </View>
       ) : null}
 
-      {/* PROJECTS */}
-      {resume?.projects?.length > 0 ? (
+      {/* ========================================
+          PROJECTS
+      ======================================== */}
+
+      {projects.length > 0 ? (
         <View style={{ marginBottom: 18 }}>
           <Text
             style={{
@@ -325,35 +525,47 @@ const ClassicTemplate = ({ resume, preview = false }) => {
             PROJECTS
           </Text>
 
-          {resume.projects.map((project, index) => (
-            <View key={project._id || index} style={{ marginBottom: 10 }}>
-              <Text
-                style={{
-                  fontSize: 10,
-                  fontWeight: "bold",
-                  color: "#111827",
-                }}
-              >
-                {project.projectName}
-              </Text>
+          {projects.map((project, index) => (
+            <View
+              key={project._id || index}
+              style={{
+                marginBottom: 10,
+              }}
+            >
+              {project.projectName ? (
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "bold",
+                    color: "#111827",
+                  }}
+                >
+                  {project.projectName}
+                </Text>
+              ) : null}
 
-              <Text
-                style={{
-                  fontSize: 8,
-                  color: "#374151",
-                  lineHeight: 12,
-                  marginTop: 3,
-                }}
-              >
-                {project.projectDescription}
-              </Text>
+              {project.projectDescription ? (
+                <Text
+                  style={{
+                    fontSize: 8,
+                    color: "#374151",
+                    lineHeight: 12,
+                    marginTop: 3,
+                  }}
+                >
+                  {project.projectDescription}
+                </Text>
+              ) : null}
             </View>
           ))}
         </View>
       ) : null}
 
-      {/* CERTIFICATIONS */}
-      {resume?.certificates ? (
+      {/* ========================================
+          CERTIFICATIONS
+      ======================================== */}
+
+      {certificates ? (
         <View>
           <Text
             style={{
@@ -370,9 +582,10 @@ const ClassicTemplate = ({ resume, preview = false }) => {
             style={{
               fontSize: 9,
               color: "#374151",
+              lineHeight: 13,
             }}
           >
-            {resume.certificates}
+            {certificates}
           </Text>
         </View>
       ) : null}

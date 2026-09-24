@@ -4,14 +4,12 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 
 import { useRoute } from "@react-navigation/native";
 
 import ResumeHeader from "../../components/ResumeHeader";
 import Button from "../../components/Button";
-import AppModal from "../../components/AppModal";
 import { Ionicons } from "@expo/vector-icons";
 
 import styles from "../../styles/global";
@@ -41,48 +39,148 @@ const AiGeneratedResume = ({ navigation }) => {
       const result = await getById(resumeId);
 
       if (!result.success || !result.resume) {
-        setError(result.message || "Unable to load resume");
+        setError(
+          result.message || "Unable to load resume"
+        );
         return;
       }
 
       setResume(result.resume);
     } catch (error) {
-      console.log("Load AI generated resume error:", error);
+      console.log(
+        "Load AI generated resume error:",
+        error
+      );
 
-      setError("Unable to load AI generated resume");
+      setError(
+        "Unable to load AI generated resume"
+      );
     }
   };
 
-  const optimization = resume?.aiOptimization;
+  /*
+   * SAFELY CONVERT VALUES TO TEXT
+   */
+  const getText = (value) => {
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
 
-  const originalAnalysis = resume?.aiAnalysis;
+    if (typeof value === "string") {
+      return value;
+    }
 
-  const optimizedAnalysis = optimization?.optimizedAnalysis || {};
+    if (
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return String(value);
+    }
 
-  const originalScore = originalAnalysis?.atsScore || 0;
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => getText(item))
+        .filter(Boolean)
+        .join(", ");
+    }
 
-  const optimizedScore = optimizedAnalysis?.atsScore ?? originalScore;
+    if (typeof value === "object") {
+      return (
+        getText(value.optimized) ||
+        getText(value.original) ||
+        ""
+      );
+    }
 
-  const scoreImprovement = optimizedScore - originalScore;
+    return "";
+  };
 
-  const originalSummary = optimization?.professionalSummary?.original || "";
+  const optimization =
+    resume?.aiOptimization;
+
+  const originalAnalysis =
+    resume?.aiAnalysis || {};
+
+  const optimizedAnalysis =
+    optimization?.optimizedAnalysis || {};
+
+  const originalScore =
+    originalAnalysis?.atsScore || 0;
+
+  const optimizedScore =
+    optimizedAnalysis?.atsScore ??
+    originalScore;
+
+  const scoreImprovement =
+    optimizedScore - originalScore;
+
+  /*
+   * SUMMARY
+   */
+
+  const originalSummary =
+    getText(
+      optimization?.professionalSummary
+        ?.original
+    ) ||
+    getText(
+      resume?.professionalSummary
+    );
 
   const optimizedSummary =
-    optimization?.professionalSummary?.optimized ||
-    resume?.professionalSummary ||
-    "";
+    getText(
+      optimization?.professionalSummary
+        ?.optimized
+    ) ||
+    getText(
+      resume?.professionalSummary
+    );
 
-  const originalSkills = optimization?.skills?.original || "";
+  /*
+   * SKILLS
+   */
+
+  const originalSkills =
+    getText(
+      optimization?.skills?.original
+    ) ||
+    getText(resume?.skills);
 
   const optimizedSkills =
-    optimization?.skills?.optimized || resume?.skills || "";
+    getText(
+      optimization?.skills?.optimized
+    ) ||
+    getText(resume?.skills);
 
-  const originalCertificates = optimization?.certificates?.original || "";
+  /*
+   * CERTIFICATES
+   */
+
+  const originalCertificates =
+    getText(
+      optimization?.certificates
+        ?.original
+    ) ||
+    getText(resume?.certificates);
 
   const optimizedCertificates =
-    optimization?.certificates?.optimized || resume?.certificates || "";
+    getText(
+      optimization?.certificates
+        ?.optimized
+    ) ||
+    getText(resume?.certificates);
 
-  const renderSectionTitle = (title, icon) => {
+  /*
+   * SECTION TITLE
+   */
+
+  const renderSectionTitle = (
+    title,
+    icon
+  ) => {
     return (
       <View
         style={{
@@ -92,7 +190,11 @@ const AiGeneratedResume = ({ navigation }) => {
           marginTop: 15,
         }}
       >
-        <Ionicons name={icon} size={17} color="#60A5FA" />
+        <Ionicons
+          name={icon}
+          size={17}
+          color="#60A5FA"
+        />
 
         <Text
           style={{
@@ -108,27 +210,42 @@ const AiGeneratedResume = ({ navigation }) => {
     );
   };
 
-  const renderText = (value, emptyText = "No information") => {
+  /*
+   * TEXT
+   */
+
+  const renderText = (value) => {
+    const text = getText(value);
+
+    if (!text.trim()) {
+      return null;
+    }
+
     return (
       <Text
         style={{
-          color: value ? "#D4D4D8" : "#71717A",
+          color: "#D4D4D8",
           fontSize: 13,
           lineHeight: 20,
         }}
       >
-        {value || emptyText}
+        {text}
       </Text>
     );
   };
 
-  const renderExperience = () => {
-    const experiences =
-      activeTab === "original"
-        ? optimization?.workExperiences || []
-        : resume?.workExperiences || [];
+  /*
+   * WORK EXPERIENCE
+   */
 
-    if (!experiences.length) {
+  const renderExperience = () => {
+    const originalExperiences =
+      resume?.workExperiences || [];
+
+    const optimizedExperiences =
+      optimization?.workExperiences || [];
+
+    if (!originalExperiences.length) {
       return (
         <Text
           style={{
@@ -141,76 +258,217 @@ const AiGeneratedResume = ({ navigation }) => {
       );
     }
 
-    return experiences.map((experience, index) => {
-      const optimizedExperience = optimization?.workExperiences?.find(
-        (item) => String(item.id) === String(experience._id),
-      );
+    return originalExperiences.map(
+      (experience, index) => {
+        const optimizedExperience =
+          optimizedExperiences.find(
+            (item) =>
+              String(item.id) ===
+              String(
+                experience._id ||
+                  experience.id
+              )
+          );
 
-      let description = "";
+        let jobTitle = "";
+        let company = "";
+        let location = "";
+        let description = "";
 
-      if (activeTab === "original") {
-        description = experience.original || "";
-      } else {
-        description =
-          optimizedExperience?.optimized || experience.description || "";
-      }
+        if (
+          activeTab === "original"
+        ) {
+          jobTitle = getText(
+            experience.jobTitle
+          );
 
-      return (
-        <View
-          key={experience._id || experience.id || index}
-          style={{
-            marginBottom: 15,
-            paddingBottom: 15,
-            borderBottomWidth: index !== experiences.length - 1 ? 1 : 0,
-            borderBottomColor: "#3F3F4A",
-          }}
-        >
-          <Text
+          company = getText(
+            experience.company
+          );
+
+          location = getText(
+            experience.location
+          );
+
+          description = getText(
+            experience.description
+          );
+        } else {
+          jobTitle =
+            getText(
+              optimizedExperience?.jobTitle
+            ) ||
+            getText(
+              experience.jobTitle
+            );
+
+          company =
+            getText(
+              optimizedExperience?.company
+            ) ||
+            getText(
+              experience.company
+            );
+
+          location =
+            getText(
+              optimizedExperience?.location
+            ) ||
+            getText(
+              experience.location
+            );
+
+          description =
+            getText(
+              optimizedExperience?.optimized
+            ) ||
+            getText(
+              experience.description
+            );
+        }
+
+        return (
+          <View
+            key={
+              experience._id ||
+              experience.id ||
+              index
+            }
             style={{
-              color: "#F8FAFC",
-              fontSize: 14,
-              fontWeight: "700",
+              marginBottom: 15,
+              paddingBottom: 15,
+              borderBottomWidth:
+                index !==
+                originalExperiences.length - 1
+                  ? 1
+                  : 0,
+              borderBottomColor:
+                "#3F3F4A",
             }}
           >
-            {experience.jobTitle || "Untitled Position"}
-          </Text>
-
-          <Text
-            style={{
-              color: "#60A5FA",
-              fontSize: 12,
-              fontWeight: "600",
-              marginTop: 3,
-            }}
-          >
-            {experience.company || "Company not specified"}
-          </Text>
-
-          {experience.location ? (
             <Text
               style={{
-                color: "#71717A",
-                fontSize: 11,
+                color: "#F8FAFC",
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
+              {jobTitle ||
+                "Untitled Position"}
+            </Text>
+
+            <Text
+              style={{
+                color: "#60A5FA",
+                fontSize: 12,
+                fontWeight: "600",
                 marginTop: 3,
               }}
             >
-              {experience.location}
+              {company ||
+                "Company not specified"}
             </Text>
-          ) : null}
 
-          <View style={{ marginTop: 8 }}>{renderText(description)}</View>
-        </View>
-      );
-    });
+            {location ? (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 11,
+                  marginTop: 3,
+                }}
+              >
+                {location}
+              </Text>
+            ) : null}
+
+            {description ? (
+              <View
+                style={{
+                  marginTop: 8,
+                }}
+              >
+                {renderText(
+                  description
+                )}
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 13,
+                  marginTop: 8,
+                }}
+              >
+                No description added.
+              </Text>
+            )}
+          </View>
+        );
+      }
+    );
   };
 
-  const renderEducation = () => {
-    const educations =
-      activeTab === "original"
-        ? resume?.educations || []
-        : optimization?.educations || [];
+  /*
+   * EDUCATION
+   *
+   * Backend AI object:
+   *
+   * {
+   *   id,
+   *   school,
+   *   degreeField,
+   *   location,
+   *   schoolYear,
+   *   description,
+   *   reason
+   * }
+   *
+   * IMPORTANT:
+   *
+   * The optimized education object DOES NOT use:
+   *
+   * school.optimized
+   * degreeField.optimized
+   * location.optimized
+   * education.optimized
+   *
+   * Instead, these are direct strings.
+   */
+  /*
+ * EDUCATION
+ *
+ * Original education:
+ * resume.educations
+ *
+ * AI optimized education:
+ * optimization.educations
+ *
+ * AI education schema:
+ *
+ * {
+ *   id,
+ *   school,
+ *   degreeField,
+ *   location,
+ *   schoolYear,
+ *   description,
+ *   reason
+ * }
+ */
 
-    if (!educations.length) {
+const renderEducation = () => {
+  const originalEducations =
+    resume?.educations || [];
+
+  const optimizedEducations =
+    optimization?.educations || [];
+
+  /*
+   * ORIGINAL TAB
+   * Always render resume.educations
+   */
+  if (activeTab === "original") {
+    if (!originalEducations.length) {
       return (
         <Text
           style={{
@@ -223,57 +481,222 @@ const AiGeneratedResume = ({ navigation }) => {
       );
     }
 
-    return educations.map((education, index) => {
-      const degreeField =
-        activeTab === "original"
-          ? education.degreeField || ""
-          : education.degreeField?.optimized || education.degreeField || "";
+    return originalEducations.map(
+      (education, index) => {
+        const school =
+          getText(education.school).trim();
 
+        const degreeField =
+          getText(
+            education.degreeField
+          ).trim();
+
+        const location =
+          getText(
+            education.location
+          ).trim();
+
+        const schoolYear =
+          getText(
+            education.schoolYear
+          ).trim();
+
+        const description =
+          getText(
+            education.description
+          ).trim();
+
+        return (
+          <View
+            key={
+              education._id ||
+              education.id ||
+              index
+            }
+            style={{
+              marginBottom: 15,
+              paddingBottom: 15,
+              borderBottomWidth:
+                index !==
+                originalEducations.length - 1
+                  ? 1
+                  : 0,
+              borderBottomColor:
+                "#3F3F4A",
+            }}
+          >
+            {degreeField ? (
+              <Text
+                style={{
+                  color: "#F8FAFC",
+                  fontSize: 14,
+                  fontWeight: "700",
+                }}
+              >
+                {degreeField}
+              </Text>
+            ) : null}
+
+            {school ? (
+              <Text
+                style={{
+                  color: "#60A5FA",
+                  fontSize: 12,
+                  fontWeight: "600",
+                  marginTop: 3,
+                }}
+              >
+                {school}
+              </Text>
+            ) : null}
+
+            {location ? (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 11,
+                  marginTop: 3,
+                }}
+              >
+                {location}
+              </Text>
+            ) : null}
+
+            {schoolYear ? (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 11,
+                  marginTop: 3,
+                }}
+              >
+                {schoolYear}
+              </Text>
+            ) : null}
+
+            {description ? (
+              <View
+                style={{
+                  marginTop: 8,
+                }}
+              >
+                {renderText(description)}
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 13,
+                  marginTop: 8,
+                }}
+              >
+                No education description added.
+              </Text>
+            )}
+          </View>
+        );
+      }
+    );
+  }
+
+
+
+  if (!optimizedEducations.length) {
+    return (
+      <Text
+        style={{
+          color: "#71717A",
+          fontSize: 13,
+        }}
+      >
+        No optimized education added.
+      </Text>
+    );
+  }
+
+  return optimizedEducations.map(
+    (education, index) => {
       const school =
-        activeTab === "original"
-          ? education.school || ""
-          : education.school?.optimized || education.school || "";
+        getText(
+          education.school
+        ).trim();
+
+      const degreeField =
+        getText(
+          education.degreeField
+        ).trim();
 
       const location =
-        activeTab === "original"
-          ? education.location || ""
-          : education.location?.optimized || education.location || "";
+        getText(
+          education.location
+        ).trim();
+
+      const schoolYear =
+        getText(
+          education.schoolYear
+        ).trim();
 
       const description =
-        activeTab === "original"
-          ? education.description || ""
-          : education.optimized?.optimized || "";
+        getText(
+          education.description
+        ).trim();
+
+      /*
+       * Don't render completely empty
+       * AI education objects.
+       */
+      if (
+        !school &&
+        !degreeField &&
+        !location &&
+        !schoolYear &&
+        !description
+      ) {
+        return null;
+      }
 
       return (
         <View
-          key={education._id || education.id || index}
+          key={
+            education.id ||
+            index
+          }
           style={{
             marginBottom: 15,
             paddingBottom: 15,
-            borderBottomWidth: index !== educations.length - 1 ? 1 : 0,
-            borderBottomColor: "#3F3F4A",
+            borderBottomWidth:
+              index !==
+              optimizedEducations.length - 1
+                ? 1
+                : 0,
+            borderBottomColor:
+              "#3F3F4A",
           }}
         >
-          <Text
-            style={{
-              color: "#F8FAFC",
-              fontSize: 14,
-              fontWeight: "700",
-            }}
-          >
-            {degreeField || "Degree / Field"}
-          </Text>
+          {degreeField ? (
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
+              {degreeField}
+            </Text>
+          ) : null}
 
-          <Text
-            style={{
-              color: "#60A5FA",
-              fontSize: 12,
-              fontWeight: "600",
-              marginTop: 3,
-            }}
-          >
-            {school || "School not specified"}
-          </Text>
+          {school ? (
+            <Text
+              style={{
+                color: "#60A5FA",
+                fontSize: 12,
+                fontWeight: "600",
+                marginTop: 3,
+              }}
+            >
+              {school}
+            </Text>
+          ) : null}
 
           {location ? (
             <Text
@@ -287,199 +710,822 @@ const AiGeneratedResume = ({ navigation }) => {
             </Text>
           ) : null}
 
-          {description ? (
-            <View style={{ marginTop: 8 }}>{renderText(description)}</View>
+          {schoolYear ? (
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 11,
+                marginTop: 3,
+              }}
+            >
+              {schoolYear}
+            </Text>
           ) : null}
+
+          {description ? (
+            <View
+              style={{
+                marginTop: 8,
+              }}
+            >
+              {renderText(description)}
+            </View>
+          ) : 
+          <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 13,
+                  marginTop: 8,
+                }}
+              >
+                No education description added.
+              </Text>
+    }
         </View>
       );
-    });
-  };
+    }
+  );
+};
+
+
+  /*
+   * PROJECTS
+   */
 
   const renderProjects = () => {
-    const projects =
-      activeTab === "original"
-        ? resume?.projects || []
-        : optimization?.projects || [];
+    const originalProjects =
+      resume?.projects || [];
 
-    
-      if (!projects.length) {
-        return (
-          <Text
-            style={{
-              color: "#71717A",
-              fontSize: 13,
-            }}
-          >
-            No projects added.
-          </Text>
-        );
-      }
-    const validProjects = projects.filter((project) => {
-      if (activeTab === "original") {
-        return (
-          project?.projectName?.trim() ||
-          project?.projectDescription?.trim()
-        );
-      }
+    const optimizedProjects =
+      optimization?.projects || [];
 
-      const optimizedProject = project;
-
+    if (!originalProjects.length) {
       return (
-        optimizedProject?.projectName?.optimized?.trim() ||
-        optimizedProject?.projectName?.trim() ||
-        optimizedProject?.optimized?.trim()
-      );
-    });
-
-    if (!validProjects.length) {
-      return null;
-    }
-
-    return validProjects.map((project, index) => {
-      const optimizedProject =
-        optimization?.projects?.find(
-          (item) => String(item.id) === String(project._id)
-        );
-
-      let projectName = "";
-      let description = "";
-
-      if (activeTab === "original") {
-        projectName = project.projectName?.trim() || "";
-        description = project.projectDescription?.trim() || "";
-      } else {
-        projectName =
-          optimizedProject?.projectName?.optimized?.trim() ||
-          optimizedProject?.projectName?.trim() ||
-          project.projectName?.trim() ||
-          "";
-
-        description =
-          optimizedProject?.optimized?.trim() ||
-          project.projectDescription?.trim() ||
-          "";
-      }
-
-      // Don't render an empty project.
-      if (!projectName && !description) {
-        return null;
-      }
-
-      return (
-        <View
-          key={project._id || project.id || index}
+        <Text
           style={{
-            marginBottom: 15,
-            paddingBottom: 15,
-            borderBottomWidth:
-              index !== validProjects.length - 1 ? 1 : 0,
-            borderBottomColor: "#3F3F4A",
+            color: "#71717A",
+            fontSize: 13,
           }}
         >
-          {projectName ? (
+          No projects added.
+        </Text>
+      );
+    }
+
+    return originalProjects.map(
+      (originalProject, index) => {
+        const optimizedProject =
+          optimizedProjects.find(
+            (item) =>
+              String(item.id) ===
+              String(
+                originalProject._id ||
+                  originalProject.id
+              )
+          );
+
+        let projectName = "";
+        let description = "";
+
+        if (
+          activeTab === "original"
+        ) {
+          projectName =
+            getText(
+              originalProject.projectName
+            ).trim();
+
+          description =
+            getText(
+              originalProject.projectDescription
+            ).trim();
+        } else {
+          projectName =
+            getText(
+              optimizedProject?.projectName
+            ).trim() ||
+            getText(
+              originalProject.projectName
+            ).trim();
+
+          description =
+            getText(
+              optimizedProject?.optimized
+            ).trim() ||
+            getText(
+              originalProject.projectDescription
+            ).trim();
+        }
+
+        if (
+          !projectName &&
+          !description
+        ) {
+          return null;
+        }
+
+        return (
+          <View
+            key={
+              originalProject._id ||
+              originalProject.id ||
+              index
+            }
+            style={{
+              marginBottom: 15,
+              paddingBottom: 15,
+              borderBottomWidth:
+                index !==
+                originalProjects.length - 1
+                  ? 1
+                  : 0,
+              borderBottomColor:
+                "#3F3F4A",
+            }}
+          >
+            {projectName ? (
+              <Text
+                style={{
+                  color: "#F8FAFC",
+                  fontSize: 14,
+                  fontWeight: "700",
+                }}
+              >
+                {projectName}
+              </Text>
+            ) : null}
+
+            {description ? (
+              <View
+                style={{
+                  marginTop: 8,
+                }}
+              >
+                {renderText(
+                  description
+                )}
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 13,
+                  marginTop: 8,
+                }}
+              >
+                No project description
+                added.
+              </Text>
+            )}
+          </View>
+        );
+      }
+    );
+  };
+
+  /*
+   * CERTIFICATES
+   */
+
+  const renderCertificates = () => {
+    const certificates =
+      activeTab === "original"
+        ? originalCertificates
+        : optimizedCertificates;
+
+    if (!certificates.trim()) {
+      return (
+        <Text
+          style={{
+            color: "#71717A",
+            fontSize: 13,
+          }}
+        >
+          No certificates/licenses
+          added.
+        </Text>
+      );
+    }
+
+    return renderText(
+      certificates
+    );
+  };
+
+  /*
+   * ORIGINAL ANALYSIS
+   */
+
+  const matchingKeywords =
+    originalAnalysis?.matchingKeywords ||
+    [];
+
+  const missingKeywords =
+    originalAnalysis?.missingKeywords ||
+    [];
+
+  const recommendations =
+    originalAnalysis?.recommendations ||
+    [];
+
+  /*
+   * STRING LIST
+   */
+
+  const renderStringList = (
+    items,
+    emptyText
+  ) => {
+    const validItems =
+      Array.isArray(items)
+        ? items
+            .map((item) =>
+              getText(item)
+            )
+            .filter(Boolean)
+        : [];
+
+    if (!validItems.length) {
+      return (
+        <Text
+          style={{
+            color: "#71717A",
+            fontSize: 13,
+          }}
+        >
+          {emptyText}
+        </Text>
+      );
+    }
+
+    return validItems.map(
+      (item, index) => (
+        <View
+          key={index}
+          style={{
+            flexDirection: "row",
+            marginBottom:
+              index !==
+              validItems.length - 1
+                ? 9
+                : 0,
+          }}
+        >
+          <Text
+            style={{
+              color: "#60A5FA",
+              fontSize: 13,
+              marginRight: 8,
+            }}
+          >
+            •
+          </Text>
+
+          <Text
+            style={{
+              flex: 1,
+              color: "#D4D4D8",
+              fontSize: 13,
+              lineHeight: 19,
+            }}
+          >
+            {item}
+          </Text>
+        </View>
+      )
+    );
+  };
+
+  /*
+   * ORIGINAL ANALYSIS
+   */
+
+  const renderOriginalAnalysis = () => {
+    return (
+      <>
+        <Text
+          style={{
+            color: "#F8FAFC",
+            fontWeight: "700",
+            fontSize: 15,
+            marginBottom: 15,
+          }}
+        >
+          Resume Analysis
+        </Text>
+
+        <View
+          style={{
+            backgroundColor: "#25252F",
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Ionicons
+              name="pricetags-outline"
+              size={18}
+              color="#60A5FA"
+            />
+
             <Text
               style={{
                 color: "#F8FAFC",
                 fontSize: 14,
                 fontWeight: "700",
+                marginLeft: 7,
               }}
             >
-              {projectName}
+              Matching Keywords
             </Text>
-          ) : null}
+          </View>
 
-          {description ? (
-            <View style={{ marginTop: 8 }}>
-              {renderText(description)}
-            </View>
-          ) : null}
+          {renderStringList(
+            matchingKeywords,
+            "No weaknesses identified."
+          )}
         </View>
-      );
-    });
+
+        {/* MISSING KEYWORDS */}
+
+        <View
+          style={{
+            backgroundColor: "#25252F",
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Ionicons
+              name="key-outline"
+              size={18}
+              color="#FBBF24"
+            />
+
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 14,
+                fontWeight: "700",
+                marginLeft: 7,
+              }}
+            >
+              Missing Keywords
+            </Text>
+          </View>
+
+          {renderStringList(
+            missingKeywords,
+            "No missing keywords identified."
+          )}
+        </View>
+
+        {/* POSSIBLE IMPROVEMENTS */}
+
+        <View
+          style={{
+            backgroundColor: "#25252F",
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 15,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
+            <Ionicons
+              name="bulb-outline"
+              size={18}
+              color="#60A5FA"
+            />
+
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 14,
+                fontWeight: "700",
+                marginLeft: 7,
+              }}
+            >
+              Possible Improvements
+            </Text>
+          </View>
+
+          {renderStringList(
+            recommendations,
+            "No possible improvements identified."
+          )}
+        </View>
+      </>
+    );
   };
 
-  const changes = optimization?.changes || [];
+  /*
+   * AI OPTIMIZED ANALYSIS
+   */
+
+  const changes =
+    Array.isArray(
+      optimization?.changes
+    )
+      ? optimization.changes
+      : [];
+
+  /*
+   * CHANGE REASONS
+   */
 
   const renderChangeReasons = () => {
-    const reasons = [];
+  const reasons = [];
 
-    if (optimization?.professionalSummary?.reason) {
-      reasons.push({
-        title: "Professional Summary",
-        reason: optimization.professionalSummary.reason,
-        icon: "document-text-outline",
-      });
-    }
+  const originalProjects =
+    Array.isArray(resume?.projects)
+      ? resume.projects
+      : [];
 
-    if (optimization?.skills?.reason) {
-      reasons.push({
-        title: "Skills",
-        reason: optimization.skills.reason,
-        icon: "sparkles-outline",
-      });
-    }
+  const originalCertificates =
+    getText(resume?.certificates).trim();
 
-    if (
-      optimization?.certificates?.reason &&
-      (
-        optimization?.certificates?.original?.trim() ||
-        optimization?.certificates?.optimized?.trim() ||
-        resume?.certificates?.trim()
-      )
-    ) {
-      reasons.push({
-        title: "Certificates",
-        reason: optimization.certificates.reason,
-        icon: "ribbon-outline",
-      });
-    }
-
-    (optimization?.workExperiences || []).forEach((experience) => {
-      if (experience.reason) {
-        reasons.push({
-          title: experience.jobTitle || "Work Experience",
-          reason: experience.reason,
-          icon: "briefcase-outline",
-        });
-      }
+  // PROFESSIONAL SUMMARY
+  if (
+    getText(
+      optimization?.professionalSummary?.reason
+    ).trim()
+  ) {
+    reasons.push({
+      title: "Professional Summary",
+      reason: getText(
+        optimization.professionalSummary.reason
+      ),
+      icon: "document-text-outline",
     });
+  }
 
-    (optimization?.educations || []).forEach((education) => {
-      if (education.reason) {
-        reasons.push({
-          title: education.degreeField || "Education",
-          reason: education.reason,
-          icon: "school-outline",
-        });
-      }
+  // SKILLS
+  if (
+    getText(
+      optimization?.skills?.reason
+    ).trim()
+  ) {
+    reasons.push({
+      title: "Skills",
+      reason: getText(
+        optimization.skills.reason
+      ),
+      icon: "sparkles-outline",
     });
+  }
 
-    (optimization?.projects || []).forEach((project) => {
-      if (project.reason) {
+  // CERTIFICATES / LICENSES
+  // Only show if certificates originally exist
+  // AND AI provided a reason.
+  if (
+    originalCertificates &&
+    getText(
+      optimization?.certificates?.reason
+    ).trim()
+  ) {
+    reasons.push({
+      title: "Certificates / Licenses",
+      reason: getText(
+        optimization.certificates.reason
+      ),
+      icon: "ribbon-outline",
+    });
+  }
+
+  // WORK EXPERIENCE
+  // Only show if AI provided a reason.
+  (
+    optimization?.workExperiences || []
+  ).forEach((experience) => {
+    const reason =
+      getText(
+        experience.reason
+      ).trim();
+
+    if (reason) {
+      reasons.push({
+        title: "Work Experience",
+        reason,
+        icon: "briefcase-outline",
+      });
+    }
+  });
+
+  // EDUCATION
+  // Only show if AI provided a reason.
+  (
+    optimization?.educations || []
+  ).forEach((education) => {
+    const reason =
+      getText(
+        education.reason
+      ).trim();
+
+    if (reason) {
+      reasons.push({
+        title: "Education",
+        reason,
+        icon: "school-outline",
+      });
+    }
+  });
+
+  // PROJECTS
+  // Only show if projects originally exist
+  // AND AI provided a reason.
+  if (originalProjects.length > 0) {
+    (
+      optimization?.projects || []
+    ).forEach((project) => {
+      const reason =
+        getText(
+          project.reason
+        ).trim();
+
+      if (reason) {
         reasons.push({
-          title: project.projectName || "Project",
-          reason: project.reason,
+          title: "Projects",
+          reason,
           icon: "folder-outline",
         });
       }
     });
+  }
 
-    return reasons;
-  };
+  return reasons;
+};
 
-  const reasonItems = renderChangeReasons();
 
-  const handleChooseTemplate = () => {
-    navigation.navigate("ChooseTemplate", {
-      resumeId,
-    });
-  };
+  const reasonItems =
+    renderChangeReasons();
+
+  /*
+   * OPTIMIZED ANALYSIS
+   */
+
+  const renderOptimizedAnalysis =
+    () => {
+      return (
+        <>
+          <Text
+            style={{
+              color: "#F8FAFC",
+              fontWeight: "700",
+              fontSize: 15,
+              marginBottom: 15,
+            }}
+          >
+            Improvements
+          </Text>
+
+          {/* MAJOR IMPROVEMENTS */}
+
+          {changes.length > 0 ? (
+            <View
+              style={{
+                backgroundColor:
+                  "#25252F",
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 12,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection:
+                    "row",
+                  alignItems:
+                    "center",
+                  marginBottom: 10,
+                }}
+              >
+                <Ionicons
+                  name="sparkles-outline"
+                  size={18}
+                  color="#60A5FA"
+                />
+
+                <Text
+                  style={{
+                    color:
+                      "#F8FAFC",
+                    fontSize: 14,
+                    fontWeight:
+                      "700",
+                    marginLeft: 7,
+                  }}
+                >
+                  Major Improvements
+                </Text>
+              </View>
+
+              {renderStringList(
+                changes,
+                "No major improvements added."
+              )}
+            </View>
+          ) : null}
+
+          {/* REASONS */}
+
+          {reasonItems.length >
+          0
+            ? reasonItems.map(
+                (
+                  item,
+                  index
+                ) => (
+                  <View
+                    key={`${item.title}-${index}`}
+                    style={{
+                      backgroundColor:
+                        "#25252F",
+                      borderRadius:
+                        16,
+                      padding: 16,
+                      marginBottom:
+                        12,
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection:
+                          "row",
+                        alignItems:
+                          "center",
+                        marginBottom:
+                          8,
+                      }}
+                    >
+                      <Ionicons
+                        name={
+                          item.icon
+                        }
+                        size={17}
+                        color="#60A5FA"
+                      />
+
+                      <Text
+                        style={{
+                          color:
+                            "#F8FAFC",
+                          fontSize: 13,
+                          fontWeight:
+                            "700",
+                          marginLeft:
+                            7,
+                        }}
+                      >
+                        {getText(
+                          item.title
+                        )}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={{
+                        color:
+                          "#A1A1AA",
+                        fontSize: 12,
+                        lineHeight:
+                          18,
+                      }}
+                    >
+                      {getText(
+                        item.reason
+                      )}
+                    </Text>
+                  </View>
+                )
+              )
+            : null}
+
+          {!changes.length &&
+          !reasonItems.length ? (
+            <View
+              style={{
+                backgroundColor:
+                  "#25252F",
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 15,
+              }}
+            >
+              <Text
+                style={{
+                  color:
+                    "#71717A",
+                  fontSize: 13,
+                  lineHeight: 19,
+                }}
+              >
+                No improvements
+                added.
+              </Text>
+            </View>
+          ) : null}
+        </>
+      );
+    };
+
+  /*
+   * CHOOSE TEMPLATE
+   */
+
+  const handleChooseTemplate =
+    () => {
+      navigation.navigate(
+        "ChooseTemplate",
+        {
+          resumeId,
+        }
+      );
+    };
+
+
+  if (loading && !resume) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            justifyContent:
+              "center",
+            alignItems:
+              "center",
+          },
+        ]}
+      >
+        <Text
+          style={{
+            color: "#A1A1AA",
+            marginBottom: 12,
+          }}
+        >
+          Loading resume...
+        </Text>
+      </View>
+    );
+  }
+
+  /*
+   * ERROR
+   */
+
+  if (error && !resume) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            justifyContent:
+              "center",
+            padding: 20,
+          },
+        ]}
+      >
+        <Text
+          style={{
+            color: "#F87171",
+            textAlign: "center",
+            fontSize: 14,
+          }}
+        >
+          {error}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.scrollContent
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
         <ResumeHeader
           navigation={navigation}
@@ -501,7 +1547,8 @@ const AiGeneratedResume = ({ navigation }) => {
 
         <View
           style={{
-            backgroundColor: "#25252F",
+            backgroundColor:
+              "#25252F",
             width: "100%",
             height: 8,
             borderRadius: 10,
@@ -527,16 +1574,16 @@ const AiGeneratedResume = ({ navigation }) => {
             marginBottom: 15,
           }}
         >
-          Review your AI-optimized resume and see what changed.
+          Review your AI-optimized
+          resume and see what changed.
         </Text>
 
-        {/* ========================================
-            ATS SCORE
-        ======================================== */}
+        {/* ATS SCORE */}
 
         <View
           style={{
-            backgroundColor: "#25252F",
+            backgroundColor:
+              "#25252F",
             borderRadius: 16,
             padding: 16,
             marginBottom: 15,
@@ -544,17 +1591,22 @@ const AiGeneratedResume = ({ navigation }) => {
         >
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
+              flexDirection:
+                "row",
+              justifyContent:
+                "space-between",
+              alignItems:
+                "center",
             }}
           >
             <View>
               <Text
                 style={{
-                  color: "#A1A1AA",
+                  color:
+                    "#A1A1AA",
                   fontSize: 12,
-                  fontWeight: "600",
+                  fontWeight:
+                    "600",
                 }}
               >
                 ATS SCORE
@@ -562,18 +1614,23 @@ const AiGeneratedResume = ({ navigation }) => {
 
               <Text
                 style={{
-                  color: "#F8FAFC",
+                  color:
+                    "#F8FAFC",
                   fontSize: 28,
-                  fontWeight: "800",
+                  fontWeight:
+                    "800",
                   marginTop: 3,
                 }}
               >
                 {optimizedScore}
+
                 <Text
                   style={{
-                    color: "#71717A",
+                    color:
+                      "#71717A",
                     fontSize: 14,
-                    fontWeight: "500",
+                    fontWeight:
+                      "500",
                   }}
                 >
                   /100
@@ -581,12 +1638,19 @@ const AiGeneratedResume = ({ navigation }) => {
               </Text>
             </View>
 
-            {scoreImprovement !== 0 ? (
+            {scoreImprovement !==
+            0 ? (
               <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: scoreImprovement > 0 ? "#173B2A" : "#3A2528",
+                  flexDirection:
+                    "row",
+                  alignItems:
+                    "center",
+                  backgroundColor:
+                    scoreImprovement >
+                    0
+                      ? "#173B2A"
+                      : "#3A2528",
                   borderRadius: 14,
                   paddingHorizontal: 10,
                   paddingVertical: 6,
@@ -594,24 +1658,40 @@ const AiGeneratedResume = ({ navigation }) => {
               >
                 <Ionicons
                   name={
-                    scoreImprovement > 0
+                    scoreImprovement >
+                    0
                       ? "trending-up-outline"
                       : "trending-down-outline"
                   }
                   size={15}
-                  color={scoreImprovement > 0 ? "#4ADE80" : "#F87171"}
+                  color={
+                    scoreImprovement >
+                    0
+                      ? "#4ADE80"
+                      : "#F87171"
+                  }
                 />
 
                 <Text
                   style={{
-                    color: scoreImprovement > 0 ? "#4ADE80" : "#F87171",
+                    color:
+                      scoreImprovement >
+                      0
+                        ? "#4ADE80"
+                        : "#F87171",
                     fontSize: 12,
-                    fontWeight: "700",
+                    fontWeight:
+                      "700",
                     marginLeft: 4,
                   }}
                 >
-                  {scoreImprovement > 0 ? "+" : ""}
-                  {scoreImprovement}
+                  {scoreImprovement >
+                  0
+                    ? "+"
+                    : ""}
+                  {
+                    scoreImprovement
+                  }
                 </Text>
               </View>
             ) : null}
@@ -619,14 +1699,20 @@ const AiGeneratedResume = ({ navigation }) => {
 
           <View
             style={{
-              flexDirection: "row",
+              flexDirection:
+                "row",
               marginTop: 12,
             }}
           >
-            <View style={{ flex: 1 }}>
+            <View
+              style={{
+                flex: 1,
+              }}
+            >
               <Text
                 style={{
-                  color: "#71717A",
+                  color:
+                    "#71717A",
                   fontSize: 11,
                 }}
               >
@@ -635,20 +1721,28 @@ const AiGeneratedResume = ({ navigation }) => {
 
               <Text
                 style={{
-                  color: "#D4D4D8",
+                  color:
+                    "#D4D4D8",
                   fontSize: 14,
-                  fontWeight: "700",
+                  fontWeight:
+                    "700",
                   marginTop: 2,
                 }}
               >
-                {originalScore}/100
+                {originalScore}
+                /100
               </Text>
             </View>
 
-            <View style={{ flex: 1 }}>
+            <View
+              style={{
+                flex: 1,
+              }}
+            >
               <Text
                 style={{
-                  color: "#71717A",
+                  color:
+                    "#71717A",
                   fontSize: 11,
                 }}
               >
@@ -657,27 +1751,38 @@ const AiGeneratedResume = ({ navigation }) => {
 
               <Text
                 style={{
-                  color: "#60A5FA",
+                  color:
+                    "#60A5FA",
                   fontSize: 14,
-                  fontWeight: "700",
+                  fontWeight:
+                    "700",
                   marginTop: 2,
                 }}
               >
-                {optimizedScore}/100
+                {optimizedScore}
+                /100
               </Text>
             </View>
           </View>
         </View>
 
+        {/* TABS */}
+
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
+            flexDirection:
+              "row",
+            justifyContent:
+              "space-between",
             marginBottom: 15,
           }}
         >
           <TouchableOpacity
-            onPress={() => setActiveTab("original")}
+            onPress={() =>
+              setActiveTab(
+                "original"
+              )
+            }
             activeOpacity={0.7}
             style={{
               width: "48%",
@@ -687,18 +1792,30 @@ const AiGeneratedResume = ({ navigation }) => {
               style={{
                 height: 36,
                 backgroundColor:
-                  activeTab === "original" ? "#2563EB" : "#25252F",
+                  activeTab ===
+                  "original"
+                    ? "#2563EB"
+                    : "#25252F",
                 borderRadius: 18,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: activeTab === "original" ? 0 : 1,
-                borderColor: "#2563EB",
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
+                borderWidth:
+                  activeTab ===
+                  "original"
+                    ? 0
+                    : 1,
+                borderColor:
+                  "#2563EB",
               }}
             >
               <Text
                 style={{
-                  color: "#F8FAFC",
-                  fontWeight: "700",
+                  color:
+                    "#F8FAFC",
+                  fontWeight:
+                    "700",
                   fontSize: 12,
                 }}
               >
@@ -708,7 +1825,11 @@ const AiGeneratedResume = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => setActiveTab("optimized")}
+            onPress={() =>
+              setActiveTab(
+                "optimized"
+              )
+            }
             activeOpacity={0.7}
             style={{
               width: "48%",
@@ -718,18 +1839,30 @@ const AiGeneratedResume = ({ navigation }) => {
               style={{
                 height: 36,
                 backgroundColor:
-                  activeTab === "optimized" ? "#2563EB" : "#25252F",
+                  activeTab ===
+                  "optimized"
+                    ? "#2563EB"
+                    : "#25252F",
                 borderRadius: 18,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: activeTab === "optimized" ? 0 : 1,
-                borderColor: "#2563EB",
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
+                borderWidth:
+                  activeTab ===
+                  "optimized"
+                    ? 0
+                    : 1,
+                borderColor:
+                  "#2563EB",
               }}
             >
               <Text
                 style={{
-                  color: "#F8FAFC",
-                  fontWeight: "700",
+                  color:
+                    "#F8FAFC",
+                  fontWeight:
+                    "700",
                   fontSize: 12,
                 }}
               >
@@ -739,9 +1872,12 @@ const AiGeneratedResume = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* RESUME CONTENT */}
+
         <View
           style={{
-            backgroundColor: "#25252F",
+            backgroundColor:
+              "#25252F",
             borderRadius: 16,
             padding: 16,
             marginBottom: 20,
@@ -749,189 +1885,136 @@ const AiGeneratedResume = ({ navigation }) => {
         >
           {/* SUMMARY */}
 
-          {renderSectionTitle("Professional Summary", "document-text-outline")}
-
-          {renderText(
-            activeTab === "original" ? originalSummary : optimizedSummary,
+          {renderSectionTitle(
+            "Professional Summary",
+            "document-text-outline"
           )}
+
+          {activeTab ===
+          "original"
+            ? originalSummary
+              ? renderText(
+                  originalSummary
+                )
+              : (
+                <Text
+                  style={{
+                    color:
+                      "#71717A",
+                    fontSize: 13,
+                  }}
+                >
+                  No professional
+                  summary added.
+                </Text>
+              )
+            : optimizedSummary
+              ? renderText(
+                  optimizedSummary
+                )
+              : (
+                <Text
+                  style={{
+                    color:
+                      "#71717A",
+                    fontSize: 13,
+                  }}
+                >
+                  No professional
+                  summary added.
+                </Text>
+              )}
 
           {/* WORK EXPERIENCE */}
 
-          {renderSectionTitle("Work Experience", "briefcase-outline")}
+          {renderSectionTitle(
+            "Work Experience",
+            "briefcase-outline"
+          )}
 
           {renderExperience()}
 
           {/* EDUCATION */}
 
-          {renderSectionTitle("Education", "school-outline")}
+          {renderSectionTitle(
+            "Education",
+            "school-outline"
+          )}
 
           {renderEducation()}
 
           {/* SKILLS */}
 
-          {renderSectionTitle("Skills", "sparkles-outline")}
-
-          {renderText(
-            activeTab === "original" ? originalSkills : optimizedSkills,
+          {renderSectionTitle(
+            "Skills",
+            "sparkles-outline"
           )}
+
+          {activeTab ===
+          "original"
+            ? originalSkills
+              ? renderText(
+                  originalSkills
+                )
+              : (
+                <Text
+                  style={{
+                    color:
+                      "#71717A",
+                    fontSize: 13,
+                  }}
+                >
+                  No skills added.
+                </Text>
+              )
+            : optimizedSkills
+              ? renderText(
+                  optimizedSkills
+                )
+              : (
+                <Text
+                  style={{
+                    color:
+                      "#71717A",
+                    fontSize: 13,
+                  }}
+                >
+                  No skills added.
+                </Text>
+              )}
 
           {/* PROJECTS */}
 
-          {renderSectionTitle("Projects", "folder-outline")}
+          {renderSectionTitle(
+            "Projects",
+            "folder-outline"
+          )}
 
           {renderProjects()}
 
           {/* CERTIFICATES */}
 
-          {renderSectionTitle("Certificates / Licenses", "ribbon-outline")}
-
-          {renderText(
-            activeTab === "original"
-              ? originalCertificates
-              : optimizedCertificates,
+          {renderSectionTitle(
+            "Certificates / Licenses",
+            "ribbon-outline"
           )}
+
+          {renderCertificates()}
         </View>
 
-        <Text
-          style={{
-            color: "#F8FAFC",
-            fontWeight: "700",
-            fontSize: 15,
-            marginBottom: 15,
-          }}
-        >
-          What changed & Why
-        </Text>
+        {/* ORIGINAL ANALYSIS */}
 
-        {/* MAJOR CHANGES */}
+        {activeTab ===
+        "original"
+          ? renderOriginalAnalysis()
+          : null}
 
-        {changes.length > 0 ? (
-          <View
-            style={{
-              backgroundColor: "#25252F",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 12,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 10,
-              }}
-            >
-              <Ionicons name="sparkles-outline" size={18} color="#60A5FA" />
+        {/* OPTIMIZED ANALYSIS */}
 
-              <Text
-                style={{
-                  color: "#F8FAFC",
-                  fontSize: 14,
-                  fontWeight: "700",
-                  marginLeft: 7,
-                }}
-              >
-                Major Improvements
-              </Text>
-            </View>
-
-            {changes.map((change, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  marginBottom: index !== changes.length - 1 ? 10 : 0,
-                }}
-              >
-                <Text
-                  style={{
-                    color: "#60A5FA",
-                    fontSize: 13,
-                    marginRight: 8,
-                  }}
-                >
-                  •
-                </Text>
-
-                <Text
-                  style={{
-                    flex: 1,
-                    color: "#D4D4D8",
-                    fontSize: 13,
-                    lineHeight: 19,
-                  }}
-                >
-                  {change}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
-        {reasonItems.length > 0 ? (
-          reasonItems.map((item, index) => (
-            <View
-              key={`${item.title}-${index}`}
-              style={{
-                backgroundColor: "#25252F",
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 12,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <Ionicons name={item.icon} size={17} color="#60A5FA" />
-
-                <Text
-                  style={{
-                    color: "#F8FAFC",
-                    fontSize: 13,
-                    fontWeight: "700",
-                    marginLeft: 7,
-                  }}
-                >
-                  {item.title}
-                </Text>
-              </View>
-
-              <Text
-                style={{
-                  color: "#A1A1AA",
-                  fontSize: 12,
-                  lineHeight: 18,
-                }}
-              >
-                {item.reason}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <View
-            style={{
-              backgroundColor: "#25252F",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 15,
-            }}
-          >
-            <Text
-              style={{
-                color: "#A1A1AA",
-                fontSize: 13,
-                lineHeight: 19,
-              }}
-            >
-              No major changes were necessary. Your resume was already well
-              aligned with the target position.
-            </Text>
-          </View>
-        )}
+        {activeTab ===
+        "optimized"
+          ? renderOptimizedAnalysis()
+          : null}
       </ScrollView>
 
       <Button
@@ -939,7 +2022,9 @@ const AiGeneratedResume = ({ navigation }) => {
           marginBottom: 65,
         }}
         title="Choose Template"
-        onPress={handleChooseTemplate}
+        onPress={
+          handleChooseTemplate
+        }
       />
     </View>
   );

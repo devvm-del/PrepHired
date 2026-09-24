@@ -1,5 +1,3 @@
-import validateRegisterForm from "../../utils/validation";
-
 const registerHandler = ({
   register,
   navigation,
@@ -27,40 +25,15 @@ const registerHandler = ({
     setConfirmPasswordError("");
     setTermsConditionError("");
 
-    const validation = validateRegisterForm({
-      fullName,
-      email,
-      password,
-      confirmPassword,
-      checked,
-    });
-
-    if (!validation.isValid) {
-      const errors = validation.errors;
-
-      setFullNameError(errors.fullName || "");
-      setEmailError(errors.email || "");
-      setPasswordError(errors.password || "");
-      setConfirmPasswordError(errors.confirmPassword || "");
-      setTermsConditionError(errors.termsCondition || "");
-
-      return;
-    }
-    // -------------------------
-    // BACKEND VALIDATION
-    // -------------------------
-
+  
     const result = await register({
       fullName: fullName.trim(),
       email: email.trim(),
       password,
       confirmPassword,
+      termsAccepted: checked,
     });
-
-    // -------------------------
-    // HANDLE BACKEND ERRORS
-    // -------------------------
-
+ 
     if (!result.success) {
       const errors = result.errors || {};
 
@@ -68,18 +41,16 @@ const registerHandler = ({
       setEmailError(errors.email || "");
       setPasswordError(errors.password || "");
       setConfirmPasswordError(errors.confirmPassword || "");
+      setTermsConditionError(errors.termsCondition || "");
 
-      if (Object.keys(errors).length === 0) {
-        setMessage(result.message);
+      if (errors.general) {
+        setMessage(errors.general);
         setModalVisible(true);
       }
 
       return;
     }
 
-    // -------------------------
-    // SUCCESS
-    // -------------------------
     setMessage("Registration successful");
     setModalVisible(true);
   };

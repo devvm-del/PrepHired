@@ -11,6 +11,7 @@ export const educationHandler = ({
     try {
       const result = await getById(resumeId);
 
+      /*
       if (result.success && result.resume) {
         if (result.resume.educations && result.resume.educations.length > 0) {
           setEducations(
@@ -21,6 +22,26 @@ export const educationHandler = ({
           );
         }
       }
+      */
+     if (
+      result.success &&
+      result.resume
+    ) {
+      const optimizedEducations =
+        result.resume.aiOptimization?.educations || [];
+
+      if (optimizedEducations.length > 0) {
+        setEducations(
+          optimizedEducations.map((education) => ({
+            ...education,
+            id:
+              education.id ||
+              education._id ||
+              Date.now() + Math.random(),
+          }))
+        );
+      }
+    }
     } catch (error) {
       console.log("Load education error:", error);
     }

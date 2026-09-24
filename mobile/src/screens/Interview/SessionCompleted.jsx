@@ -67,6 +67,23 @@ const SessionCompleted = () => {
           <Text style={{ color: "#F8FAFC", fontWeight: "bold", fontSize: 35 }}>
             78%
           </Text>
+
+          <View
+            style={{
+              backgroundColor: "#25252F",
+              paddingStart: 50,
+              paddingEnd: 50,
+              width: "100%",
+              height: 8,
+              borderRadius: 10,
+              overflow: "hidden",
+              marginTop: 10,
+            }}
+          >
+            <View style={{backgroundColor: '#15151B', borderRadius: 10}}>
+              <View style={[styles.percent, { width: "50.7%" }]} />
+            </View>
+          </View>
         </View>
 
         <Text

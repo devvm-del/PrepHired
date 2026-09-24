@@ -80,7 +80,7 @@ const ChooseTemplate = ({ navigation }) => {
         <ResumeHeader
           navigation={navigation}
           resumeLabel="Choose Template"
-          navigateTo="SummaryExtras"
+          navigateTo="AiGeneratedResume"
           resumeId={resumeId}
         />
 
