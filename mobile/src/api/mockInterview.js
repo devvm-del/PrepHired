@@ -75,7 +75,7 @@ export const saveInterviewAnswer = async ({
   const response = await fetch(
     `${API_URL}/mobile/mock-interview/${interviewId}/answer`,
     {
-      method: "PUT",
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -167,7 +167,7 @@ export const completeMockInterview = async (
   const response = await fetch(
     `${API_URL}/mobile/mock-interview/${interviewId}/complete`,
     {
-      method: "PUT",
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,

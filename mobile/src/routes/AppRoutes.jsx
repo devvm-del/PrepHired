@@ -34,7 +34,7 @@ export default function AppRoutes() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName="Interview"
         screenOptions={{
           headerShown: false,
           animation: "none",

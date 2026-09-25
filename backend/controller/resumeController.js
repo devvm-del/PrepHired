@@ -1133,6 +1133,7 @@ const optimizeResume = async (req, res) => {
       resume.professionalSummary = optimization.professionalSummary.optimized;
     }
 
+    /*
     if (Array.isArray(optimization.workExperiences)) {
       optimization.workExperiences.forEach((optimizedExperience) => {
         const experience = resume.workExperiences.id(optimizedExperience.id);
@@ -1158,6 +1159,66 @@ const optimizeResume = async (req, res) => {
         }
       });
     }
+    */
+   if (Array.isArray(optimization.workExperiences)) {
+    optimization.workExperiences.forEach((optimizedExperience) => {
+      const experience = resume.workExperiences.id(
+        optimizedExperience.id
+      );
+
+      if (!experience) {
+        return;
+      }
+
+      // IMPORTANT:
+      // Check the ORIGINAL work experience stored in resume.workExperiences.
+      const originalDescription =
+        experience.description?.trim() || "";
+
+      // Store the AI result separately.
+      // DO NOT modify resume.workExperiences here.
+      optimizedExperience.jobTitle =
+        optimizedExperience.jobTitle ??
+        experience.jobTitle;
+
+      optimizedExperience.company =
+        optimizedExperience.company ??
+        experience.company;
+
+      optimizedExperience.location =
+        optimizedExperience.location ??
+        experience.location;
+
+      // NEVER allow AI to change the user's employment period.
+      optimizedExperience.periodOfEmployment =
+        experience.periodOfEmployment || "";
+
+      // NEVER allow AI to change the user's currentlyWorking value.
+      optimizedExperience.currentlyWorking =
+        experience.currentlyWorking;
+
+      // If user had NO original description,
+      // AI optimized description MUST remain empty.
+      if (!originalDescription) {
+        optimizedExperience.description = "";
+      }
+
+      // If user DID provide a description,
+      // use the AI description if provided.
+      if (
+        originalDescription &&
+        optimizedExperience.description === undefined
+      ) {
+        optimizedExperience.description =
+          originalDescription;
+      }
+    });
+
+      // Save ONLY to aiOptimization.
+      resume.aiOptimization.workExperiences =
+        optimization.workExperiences;
+    }
+
 
     /*
     if (Array.isArray(optimization.educations)) {
@@ -1284,10 +1345,6 @@ const optimizeResume = async (req, res) => {
     resume.aiOptimization.educations =
       optimization.educations;
   }
-
-   
-
-   
 
     if (optimization.skills?.optimized !== undefined) {
       resume.skills = optimization.skills.optimized;

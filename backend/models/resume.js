@@ -182,6 +182,7 @@ const optimizationTextSchema = new mongoose.Schema(
   { _id: false },
 );
 
+/*
 const optimizedWorkExperienceSchema = new mongoose.Schema(
   {
     id: {
@@ -214,6 +215,58 @@ const optimizedWorkExperienceSchema = new mongoose.Schema(
     },
 
     optimized: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    reason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
+  { _id: false },
+);
+*/
+
+const optimizedWorkExperienceSchema = new mongoose.Schema(
+  {
+    id: {
+      type: String,
+      default: "",
+    },
+
+    jobTitle: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    company: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    location: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    periodOfEmployment: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    currentlyWorking: {
+      type: Boolean,
+      default: false,
+    },
+
+    description: {
       type: String,
       trim: true,
       default: "",

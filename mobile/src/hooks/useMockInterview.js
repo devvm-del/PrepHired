@@ -8,7 +8,7 @@ import {
   analyzeInterviewSession,
   completeMockInterview,
   getCompletedMockInterviews,
-} from "../services/mockInterviewService";
+} from "../api/mockInterview";
 
 const useMockInterview = () => {
   const [loading, setLoading] = useState(false);

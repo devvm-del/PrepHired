@@ -1,14 +1,38 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 
-import { useNavigation } from "@react-navigation/native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+
 import IconTextInput from "../components/IconTextInput";
 import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
+
 import styles from "../styles/global";
+
+import useMockInterview from "../hooks/useMockInterview";
+import { interviewHandler } from "../handlers/interview/interviewHandler";
 
 const Interview = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  /*
+    Pass your existing authentication token when
+    navigating to this screen.
+
+    Example:
+    navigation.navigate("Interview", {
+      token: yourExistingToken,
+    });
+  */
+  const token = route.params?.token || null;
+
+  const { create, loading } = useMockInterview();
 
   const [targetJob, setTargetJob] = useState("");
   const [targetJobError, setTargetJobError] = useState("");
@@ -16,7 +40,8 @@ const Interview = () => {
   const [selectedInterviewCategory, setSelectedInterviewCategory] =
     useState("All");
 
-  const [selectedResponseMode, setSelectedResponseMode] = useState("Text");
+  const [selectedResponseMode, setSelectedResponseMode] =
+    useState("Text");
 
   const [selectedNumberOfQuestions, setSelectedNumberOfQuestions] =
     useState("5");
@@ -28,23 +53,31 @@ const Interview = () => {
     "All",
   ];
 
-  const responseModeCategory = ["Text", "Audio"];
+  const responseModeCategory = [
+    "Text",
+    "Audio",
+  ];
 
-  const numberOfQuestionsCategories = ["5", "8", "12"];
+  const numberOfQuestionsCategories = [
+    "5",
+    "8",
+    "12",
+  ];
 
-  const handleStartInterview = () => {
-    if (!targetJob.trim()) {
-      setTargetJobError("Please enter the role you are targeting.");
-      return;
-    }
-
-    navigation.navigate("QuestionAndAnswer", {
-      targetJob: targetJob.trim(),
-      interviewCategory: selectedInterviewCategory,
-      responseMode: selectedResponseMode,
-      numberOfQuestions: selectedNumberOfQuestions,
-    });
-  };
+  const {
+    handleTargetJobChange,
+    handleStartInterview,
+  } = interviewHandler({
+    targetJob,
+    setTargetJob,
+    setTargetJobError,
+    selectedInterviewCategory,
+    selectedResponseMode,
+    selectedNumberOfQuestions,
+    navigation,
+    create,
+    token,
+  });
 
   return (
     <View style={styles.container}>
@@ -52,171 +85,241 @@ const Interview = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text
-          style={{
-            color: "#F8FAFC",
-            fontSize: 22,
-            fontWeight: "700",
-            marginBottom: 20,
-          }}
-        >
-          AI Mock Interview
-        </Text>
+        {/* HEADER */}
+        <View style={{ marginBottom: 24 }}>
+          <Text
+            style={{
+              color: "#F8FAFC",
+              fontSize: 28,
+              fontWeight: "800",
+              marginBottom: 8,
+            }}
+          >
+            Mock Interview
+          </Text>
 
-        <Text
-          style={{
-            color: "#F8FAFC",
-            fontSize: 15,
-            fontWeight: "700",
-            marginBottom: 5,
-          }}
-        >
-          What role are you targeting?
-        </Text>
+          <Text
+            style={{
+              color: "#71717A",
+              fontSize: 14,
+              lineHeight: 21,
+            }}
+          >
+            Practice answering interview questions and get AI-powered
+            feedback on your responses.
+          </Text>
+        </View>
 
-        <IconTextInput
-          style={{
-            height: 55,
-            marginTop: -20,
-          }}
-          icon="person-outline"
-          placeholder="eg. Software Developer"
-          value={targetJob}
-          onChangeText={(text) => {
-            setTargetJob(text);
-            setTargetJobError("");
-          }}
-          keyboardType="default"
-          error={targetJobError}
+        {/* TARGET JOB */}
+        <View >
+          <Text
+            style={{
+              color: "#F8FAFC",
+              fontSize: 14,
+              fontWeight: "700",
+            }}
+          >
+            TARGET JOB
+          </Text>
+
+          <IconTextInput
+            style={{marginTop: -15}}
+            icon="person-outline"
+            placeholder="e.g. Software Developer"
+            value={targetJob}
+            onChangeText={handleTargetJobChange}
+            error={targetJobError}
+          />
+    
+          {targetJobError ? (
+              <Text style={styles.textError}>{targetJobError}</Text>
+            ) : null}
+          
+        </View>
+
+        {/* INTERVIEW CATEGORY */}
+        <View style={{ marginBottom: 24 }}>
+          <Text
+            style={{
+              color: "#F8FAFC",
+              fontSize: 14,
+              fontWeight: "700",
+              marginBottom: 10,
+            }}
+          >
+            INTERVIEW TYPE
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: 'space-between'
+            }}
+          >
+            {interviewCategories.map((category) => {
+              const selected =
+                selectedInterviewCategory === category;
+
+              return (
+                <TouchableOpacity
+                  key={category}
+                  onPress={() =>
+                    setSelectedInterviewCategory(category)
+                  }
+                  style={{
+                    paddingHorizontal: 13,
+                    paddingVertical: 11,
+                    borderRadius: 10,
+                    backgroundColor: selected
+                      ? "#2563EB"
+                      : "#25252F",
+                    borderWidth: 1,
+                    borderColor: selected
+                      ? "#2563EB"
+                      : "#3F3F46",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#F8FAFC",
+                      fontSize: 13,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* RESPONSE MODE */}
+        <View style={{ marginBottom: 24 }}>
+          <Text
+            style={{
+              color: "#F8FAFC",
+              fontSize: 14,
+              fontWeight: "700",
+              marginBottom: 10,
+            }}
+          >
+            RESPONSE MODE
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+            }}
+          >
+            {responseModeCategory.map((mode) => {
+              const selected =
+                selectedResponseMode === mode;
+
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => setSelectedResponseMode(mode)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 13,
+                    borderRadius: 10,
+                    alignItems: "center",
+                    backgroundColor: selected
+                      ? "#2563EB"
+                      : "#25252F",
+                    borderWidth: 1,
+                    borderColor: selected
+                      ? "#2563EB"
+                      : "#3F3F46",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#F8FAFC",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {mode}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* NUMBER OF QUESTIONS */}
+        <View style={{ marginBottom: 30 }}>
+          <Text
+            style={{
+              color: "#F8FAFC",
+              fontSize: 14,
+              fontWeight: "700",
+              marginBottom: 10,
+            }}
+          >
+            NUMBER OF QUESTIONS
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+            }}
+          >
+            {numberOfQuestionsCategories.map((number) => {
+              const selected =
+                selectedNumberOfQuestions === number;
+
+              return (
+                <TouchableOpacity
+                  key={number}
+                  onPress={() =>
+                    setSelectedNumberOfQuestions(number)
+                  }
+                  style={{
+                    flex: 1,
+                    paddingVertical: 13,
+                    borderRadius: 10,
+                    alignItems: "center",
+                    backgroundColor: selected
+                      ? "#2563EB"
+                      : "#25252F",
+                    borderWidth: 1,
+                    borderColor: selected
+                      ? "#2563EB"
+                      : "#3F3F46",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#F8FAFC",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {number}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* START */}
+        <Button
+          title={
+            loading
+              ? "Creating Interview..."
+              : "Start Interview"
+          }
+          onPress={handleStartInterview}
+          disabled={loading}
         />
-
-        {targetJobError ? (
-          <Text style={styles.textError}>{targetJobError}</Text>
-        ) : null}
-
-        {/* Interview Category */}
-        <Text
-          style={{
-            color: "#71717A",
-            fontSize: 12,
-            fontWeight: "700",
-            marginBottom: 10,
-            marginTop: 10,
-          }}
-        >
-          INTERVIEW CATEGORY
-        </Text>
-
-        <View style={styles.interviewCategoryContainer}>
-          {interviewCategories.map((category) => {
-            const selected = selectedInterviewCategory === category;
-
-            return (
-              <TouchableOpacity
-                key={category}
-                style={[
-                  styles.interviewCategoryChip,
-                  selected && styles.interviewCategorySelected,
-                ]}
-                onPress={() => setSelectedInterviewCategory(category)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.interviewCategoryText,
-                    selected && styles.interviewCategoryTextSelected,
-                  ]}
-                >
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Response Mode */}
-        <Text
-          style={{
-            color: "#71717A",
-            fontSize: 12,
-            fontWeight: "700",
-            marginBottom: 10,
-            marginTop: 10,
-          }}
-        >
-          RESPONSE MODE
-        </Text>
-
-        <View style={styles.interviewCategoryContainer}>
-          {responseModeCategory.map((responseMode) => {
-            const selected = selectedResponseMode === responseMode;
-
-            return (
-              <TouchableOpacity
-                key={responseMode}
-                style={[
-                  styles.responseModeChip,
-                  selected && styles.responseModeSelected,
-                ]}
-                onPress={() => setSelectedResponseMode(responseMode)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.interviewCategoryText,
-                    selected && styles.interviewCategoryTextSelected,
-                  ]}
-                >
-                  {responseMode}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <Text
-          style={{
-            color: "#71717A",
-            fontSize: 12,
-            fontWeight: "700",
-            marginBottom: 10,
-            marginTop: 10,
-          }}
-        >
-          NUMBER OF QUESTIONS
-        </Text>
-
-        <View style={styles.interviewCategoryContainer}>
-          {numberOfQuestionsCategories.map((numberOfQuestions) => {
-            const selected = selectedNumberOfQuestions === numberOfQuestions;
-
-            return (
-              <TouchableOpacity
-                key={numberOfQuestions}
-                style={[
-                  styles.numberOfQuestionChip,
-                  selected && styles.numberOfQuestionsSelected,
-                ]}
-                onPress={() => setSelectedNumberOfQuestions(numberOfQuestions)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.interviewCategoryText,
-                    selected && styles.interviewCategoryTextSelected,
-                  ]}
-                >
-                  {numberOfQuestions}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <Button title="Start Interview" onPress={handleStartInterview} />
       </ScrollView>
 
-      <BottomNav active="interview" />
+      <BottomNav active="interview"/>
     </View>
   );
 };

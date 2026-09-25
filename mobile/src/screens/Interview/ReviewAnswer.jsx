@@ -1,15 +1,86 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 
-import { useNavigation } from "@react-navigation/native";
-import IconTextInput from "../../components/IconTextInput";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+
+import {
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+
+import { Ionicons } from "@expo/vector-icons";
+
 import InterviewHeader from "../../components/InterviewHeader";
 import Button from "../../components/Button";
+
 import styles from "../../styles/global";
-import { Ionicons } from "@expo/vector-icons";
+
+import useMockInterview from "../../hooks/useMockInterview";
+
+import {
+  reviewAnswerHandler,
+} from "../../handlers/interview/reviewAnswerHandler";
 
 const ReviewAnswer = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  const {
+    mockInterviewId,
+    token,
+  } = route.params || {};
+
+  const {
+    getById,
+  } = useMockInterview();
+
+  const [interview, setInterview] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const {
+    loadInterview,
+  } = reviewAnswerHandler({
+    mockInterviewId,
+    getById,
+    token,
+    setInterview,
+    setLoading,
+  });
+
+  useEffect(() => {
+    loadInterview();
+  }, [mockInterviewId]);
+
+  const questions =
+    interview?.questions || [];
+
+  const handleOpenFeedback = (
+    question,
+    questionNumber,
+  ) => {
+    navigation.navigate(
+      "AnswerFeedback",
+      {
+        mockInterviewId,
+        questionNumber,
+        totalQuestions: questions.length,
+        question,
+        analysis: question,
+        token,
+      },
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -24,46 +95,230 @@ const ReviewAnswer = () => {
           showTimer={false}
         />
 
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            height: 140,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 16,
-            marginTop: 20,
-          }}
-        ></View>
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            height: 140,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 16,
-            marginTop: 20,
-          }}
-        ></View>
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            height: 140,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 16,
-            marginTop: 20,
-          }}
-        ></View>
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            height: 140,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 16,
-            marginTop: 20,
-          }}
-        ></View>
+        {loading ? (
+          <View
+            style={{
+              paddingVertical: 50,
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 14,
+              }}
+            >
+              Loading answers...
+            </Text>
+          </View>
+        ) : questions.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: "#25252F",
+              borderRadius: 16,
+              padding: 24,
+            }}
+          >
+            <Text
+              style={{
+                color: "#71717A",
+                textAlign: "center",
+                fontSize: 14,
+              }}
+            >
+              No interview answers are available.
+            </Text>
+          </View>
+        ) : (
+          questions.map((question, index) => {
+            const questionNumber =
+              question.questionNumber ||
+              index + 1;
+
+            const score =
+              Number(question.score) || 0;
+
+            const answer =
+              question.answer ||
+              "No answer provided.";
+
+            return (
+              <View
+                key={`${questionNumber}-${index}`}
+                style={{
+                  backgroundColor: "#25252F",
+                  borderRadius: 16,
+                  padding: 18,
+                  marginBottom: 16,
+                }}
+              >
+                {/* QUESTION NUMBER */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#60A5FA",
+                      fontSize: 11,
+                      fontWeight: "800",
+                      letterSpacing: 1,
+                    }}
+                  >
+                    QUESTION {questionNumber}
+                  </Text>
+
+                  <View
+                    style={{
+                      backgroundColor: "#18181F",
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#F8FAFC",
+                        fontSize: 11,
+                        fontWeight: "800",
+                      }}
+                    >
+                      {score}%
+                    </Text>
+                  </View>
+                </View>
+
+                {/* QUESTION */}
+                <Text
+                  style={{
+                    color: "#F8FAFC",
+                    fontSize: 16,
+                    lineHeight: 24,
+                    fontWeight: "700",
+                    marginBottom: 16,
+                  }}
+                >
+                  {question.question}
+                </Text>
+
+                {/* ANSWER */}
+                <View
+                  style={{
+                    backgroundColor: "#18181F",
+                    borderRadius: 12,
+                    padding: 14,
+                    marginBottom: 14,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#71717A",
+                      fontSize: 10,
+                      fontWeight: "800",
+                      marginBottom: 7,
+                    }}
+                  >
+                    YOUR ANSWER
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: "#A1A1AA",
+                      fontSize: 14,
+                      lineHeight: 21,
+                    }}
+                  >
+                    {answer}
+                  </Text>
+                </View>
+
+                {/* FEEDBACK */}
+                {question.feedback ? (
+                  <View
+                    style={{
+                      marginBottom: 14,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#F8FAFC",
+                        fontSize: 12,
+                        fontWeight: "800",
+                        marginBottom: 7,
+                      }}
+                    >
+                      AI FEEDBACK
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: "#A1A1AA",
+                        fontSize: 13,
+                        lineHeight: 20,
+                      }}
+                    >
+                      {question.feedback}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* VIEW FEEDBACK */}
+                <TouchableOpacity
+                  onPress={() =>
+                    handleOpenFeedback(
+                      question,
+                      questionNumber,
+                    )
+                  }
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#18181F",
+                    borderRadius: 10,
+                    paddingVertical: 11,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#60A5FA",
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    View Detailed Feedback
+                  </Text>
+
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color="#60A5FA"
+                    style={{
+                      marginLeft: 5,
+                    }}
+                  />
+                </TouchableOpacity>
+              </View>
+            );
+          })
+        )}
+
+        <Button
+          title="Back to Results"
+          onPress={() =>
+            navigation.navigate(
+              "SessionCompleted",
+              {
+                mockInterviewId,
+                token,
+              },
+            )
+          }
+        />
       </ScrollView>
     </View>
   );

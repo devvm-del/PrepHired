@@ -1308,8 +1308,8 @@ async def optimize_resume(data: ResumeRequest):
                     "jobTitle": "",
                     "company": "",
                     "location": "",
-                    "original": "",
-                    "optimized": "",
+                    "periodOfEmployment: "",
+                    "description: "",
                     "reason": ""
                 }}
             ],

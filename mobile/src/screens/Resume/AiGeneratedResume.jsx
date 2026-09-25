@@ -238,6 +238,7 @@ const AiGeneratedResume = ({ navigation }) => {
    * WORK EXPERIENCE
    */
 
+  /*
   const renderExperience = () => {
     const originalExperiences =
       resume?.workExperiences || [];
@@ -407,6 +408,161 @@ const AiGeneratedResume = ({ navigation }) => {
       }
     );
   };
+  */
+
+  const renderExperience = () => {
+  const originalExperiences =
+    resume?.workExperiences || [];
+
+  const optimizedExperiences =
+    optimization?.workExperiences || [];
+
+  if (!optimizedExperiences.length) {
+    return (
+      <Text
+        style={{
+          color: "#71717A",
+          fontSize: 13,
+        }}
+      >
+        No optimized work experience added.
+      </Text>
+    );
+  }
+
+  return optimizedExperiences.map(
+    (experience, index) => {
+      const jobTitle =
+        getText(
+          experience.jobTitle
+        ).trim();
+
+      const company =
+        getText(
+          experience.company
+        ).trim();
+
+      const location =
+        getText(
+          experience.location
+        ).trim();
+
+      const periodOfEmployment =
+        getText(
+          experience.periodOfEmployment
+        ).trim();
+
+      const description =
+        getText(
+          experience.description
+        ).trim();
+
+      /*
+       * Don't render completely empty
+       * AI work experience objects.
+       */
+      if (
+        !jobTitle &&
+        !company &&
+        !location &&
+        !periodOfEmployment &&
+        !description
+      ) {
+        return null;
+      }
+
+      return (
+        <View
+          key={
+            experience.id ||
+            index
+          }
+          style={{
+            marginBottom: 15,
+            paddingBottom: 15,
+            borderBottomWidth:
+              index !==
+              optimizedExperiences.length - 1
+                ? 1
+                : 0,
+            borderBottomColor:
+              "#3F3F4A",
+          }}
+        >
+          {jobTitle ? (
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
+              {jobTitle}
+            </Text>
+          ) : null}
+
+          {company ? (
+            <Text
+              style={{
+                color: "#60A5FA",
+                fontSize: 12,
+                fontWeight: "600",
+                marginTop: 3,
+              }}
+            >
+              {company}
+            </Text>
+          ) : null}
+
+          {location ? (
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 11,
+                marginTop: 3,
+              }}
+            >
+              {location}
+            </Text>
+          ) : null}
+
+          {periodOfEmployment ? (
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 11,
+                marginTop: 3,
+              }}
+            >
+              {periodOfEmployment}
+            </Text>
+          ) : null}
+
+          {description ? (
+            <View
+              style={{
+                marginTop: 8,
+              }}
+            >
+              {renderText(description)}
+            </View>
+          ) : (
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 13,
+                marginTop: 8,
+              }}
+            >
+              No work experience description added.
+            </Text>
+          )}
+        </View>
+      );
+    }
+  );
+};
+
 
   /*
    * EDUCATION
@@ -746,7 +902,6 @@ const renderEducation = () => {
     }
   );
 };
-
 
   /*
    * PROJECTS
