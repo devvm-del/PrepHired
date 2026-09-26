@@ -1,20 +1,29 @@
 import { API_URL } from "../config/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const getAuthHeaders = async () => {
+  const token = await AsyncStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+};
+
+// CREATE INTERVIEW
 export const createMockInterview = async ({
   targetJob,
   interviewCategory,
   responseMode,
   numberOfQuestions,
-  token,
 }) => {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview`,
+    `${API_URL}/mobile/mockInterview`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify({
         targetJob,
         interviewCategory,
@@ -36,19 +45,15 @@ export const createMockInterview = async ({
   return data;
 };
 
+// GET INTERVIEW
+export const getMockInterview = async (interviewId) => {
+  const headers = await getAuthHeaders();
 
-export const getMockInterview = async (
-  interviewId,
-  token,
-) => {
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview/${interviewId}`,
+    `${API_URL}/mobile/mockInterview/${interviewId}`,
     {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     },
   );
 
@@ -64,22 +69,21 @@ export const getMockInterview = async (
   return data;
 };
 
+// SAVE ANSWER
 export const saveInterviewAnswer = async ({
   interviewId,
   questionNumber,
   answer,
   audioUrl,
   timeUsed,
-  token,
 }) => {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview/${interviewId}/answer`,
+    `${API_URL}/mobile/mockInterview/${interviewId}/answer`,
     {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify({
         questionNumber,
         answer,
@@ -101,19 +105,20 @@ export const saveInterviewAnswer = async ({
   return data;
 };
 
+// ANALYZE SINGLE ANSWER
+// Keep this API available, even though the new flow
+// does not call it during the interview.
 export const analyzeInterviewAnswer = async ({
   interviewId,
   questionNumber,
-  token,
 }) => {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview/${interviewId}/analyze-answer`,
+    `${API_URL}/mobile/mockInterview/${interviewId}/analyze-answer`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify({
         questionNumber,
       }),
@@ -132,18 +137,17 @@ export const analyzeInterviewAnswer = async ({
   return data;
 };
 
+// ANALYZE COMPLETE SESSION
 export const analyzeInterviewSession = async (
   interviewId,
-  token,
 ) => {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview/${interviewId}/analyze-session`,
+    `${API_URL}/mobile/mockInterview/${interviewId}/analyze-session`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     },
   );
 
@@ -159,19 +163,17 @@ export const analyzeInterviewSession = async (
   return data;
 };
 
-
+// COMPLETE INTERVIEW
 export const completeMockInterview = async (
   interviewId,
-  token,
 ) => {
+  const headers = await getAuthHeaders();
+
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview/${interviewId}/complete`,
+    `${API_URL}/mobile/mockInterview/${interviewId}/complete`,
     {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     },
   );
 
@@ -187,18 +189,15 @@ export const completeMockInterview = async (
   return data;
 };
 
+// GET COMPLETED INTERVIEWS
+export const getCompletedMockInterviews = async () => {
+  const headers = await getAuthHeaders();
 
-export const getCompletedMockInterviews = async (
-  token,
-) => {
   const response = await fetch(
-    `${API_URL}/mobile/mock-interview/completed`,
+    `${API_URL}/mobile/mockInterview/completed`,
     {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     },
   );
 

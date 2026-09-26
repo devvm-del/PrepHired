@@ -143,8 +143,9 @@ const ResumePreview = ({ navigation }) => {
           onPress={handleSaveResume}
           disabled={loading}
         />
-
-        <AppModal
+      </View>
+      
+      <AppModal
           visible={modalVisible}
           message={modalMessage}
           onClose={() => {
@@ -154,7 +155,6 @@ const ResumePreview = ({ navigation }) => {
             }
           }}
         />
-      </View>
     </View>
   );
 };

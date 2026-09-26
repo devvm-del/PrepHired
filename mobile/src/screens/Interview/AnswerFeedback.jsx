@@ -1,6 +1,3 @@
-
-import React from "react";
-
 import {
   View,
   Text,
@@ -97,7 +94,6 @@ const AnswerFeedback = () => {
     totalQuestions,
     question,
     analysis,
-    token,
   } = route.params || {};
 
   const {
@@ -117,7 +113,6 @@ const AnswerFeedback = () => {
     getById,
     analyzeSession,
     complete,
-    token,
   });
 
   const feedback =
@@ -408,18 +403,20 @@ const AnswerFeedback = () => {
           </View>
         )}
 
-        <Button
-          title={
-            loading
-              ? "Loading..."
-              : questionNumber < totalQuestions
-                ? "Continue"
-                : "View Session Results"
-          }
-          onPress={handleContinue}
-          disabled={loading}
-        />
+        
       </ScrollView>
+      <Button
+        style={{ marginBottom: 65}}
+        title={
+          loading
+            ? "Loading..."
+            : questionNumber < totalQuestions
+              ? "Continue"
+              : "View Session Results"
+        }
+        onPress={handleContinue}
+        disabled={loading}
+      />
     </View>
   );
 };

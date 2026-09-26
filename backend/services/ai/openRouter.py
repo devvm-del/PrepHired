@@ -404,64 +404,128 @@ async def analyze_resume(data: ResumeRequest):
         )
 
         prompt = f"""
-You are an expert ATS resume analyst.
+        You are an expert ATS resume analyst.
 
-Analyze the resume ONLY using information provided by the applicant.
-Never invent skills, experience, certifications, achievements,
-qualifications, numbers, or keywords.
+        Analyze the resume ONLY using information provided by the applicant.
+        Never invent skills, experience, certifications, achievements,
+        qualifications, numbers, or keywords.
 
-Target Job:
-{target_job or "Not provided"}
+        Target Job:
+        {target_job or "Not provided"}
 
-Work Experience:
-{work_experiences or "Not provided"}
+        Work Experience:
+        {work_experiences or "Not provided"}
 
-Education:
-{educations or "Not provided"}
+        Education:
+        {educations or "Not provided"}
 
-Skills:
-{skills or "Not provided"}
+        Skills:
+        {skills or "Not provided"}
 
-Projects:
-{projects or "Not provided"}
+        Projects:
+        {projects or "Not provided"}
 
-Certificates:
-{certificates or "Not provided"}
+        Certificates:
+        {certificates or "Not provided"}
 
-Rules:
+        ==================================================
+        ATS SCORE
+        ==================================================
 
-- Optional sections may be empty.
-- Empty sections must NOT reduce the ATS score.
-- Empty sections must NOT be called weaknesses.
-- Empty sections must NOT appear in recommendations.
-- Only analyze sections that contain information.
-- Compare provided information against the target job.
-- Missing keywords means relevant target-job keywords not supported
-  by the applicant's provided information.
-- Matching keywords means target-job keywords supported by the
-  applicant's provided information.
-- Recommendations must improve existing information and must not
-  invent content.
-- Return an empty analysis string for any empty section.
+        Give an ATS score from 0-100 based on relevance to the target job.
 
-Calculate an ATS score from 0 to 100 based only on information
-actually provided and its relevance to the target job.
+        Consider:
 
-Return ONLY valid JSON:
+        - Keyword matching: 30%
+        - Skills: 20%
+        - Experience: 20%
+        - Education: 10%
+        - Projects: 10%
+        - Certifications: 5%
+        - Clarity and ATS readability: 5%
 
-{{
-    "atsScore": 0,
-    "strengths": [],
-    "missingKeywords": [],
-    "matchingKeywords": [],
-    "recommendations": [],
-    "experienceAnalysis": "",
-    "educationAnalysis": "",
-    "skillsAnalysis": "",
-    "projectAnalysis": "",
-    "certificateAnalysis": ""
-}}
-"""
+        Rules:
+
+        - Score ONLY information actually provided.
+        - Empty sections must NOT lower the score.
+        - Empty sections must NOT be called weaknesses.
+        - Redistribute the weight of empty sections to sections containing
+        information.
+        - If there is no work experience, do NOT penalize the applicant.
+        - For applicants without work experience, focus on education, skills,
+        projects, certifications, and other relevant information.
+        - Matching keywords must be supported by the resume.
+        - Missing keywords must be relevant target-job keywords not supported
+        by the resume.
+        - Never invent or assume skills, technologies, experience,
+        certifications, achievements, metrics, or qualifications.
+        - Recommendations must only suggest truthful improvements.
+        - Score must be an integer from 0 to 100.
+
+        ==================================================
+        SECTION ANALYSIS
+        ==================================================
+
+        Analyze only sections that contain information.
+
+        For empty sections:
+
+        - Return an empty analysis string.
+        - Do not call the section a weakness.
+        - Do not include it in recommendations.
+
+        Analyze:
+
+        - Work experience
+        - Education
+        - Skills
+        - Projects
+        - Certificates
+
+        ==================================================
+        KEYWORDS
+        ==================================================
+
+        matchingKeywords:
+        Target-job keywords supported by the applicant's resume.
+
+        missingKeywords:
+        Relevant target-job keywords not supported by the applicant's resume.
+
+        Never add unsupported keywords to matchingKeywords.
+
+        ==================================================
+        STRENGTHS
+        ==================================================
+
+        List only genuine strengths supported by the resume.
+
+        ==================================================
+        RECOMMENDATIONS
+        ==================================================
+
+        Give useful recommendations for improving the existing resume.
+        Never recommend fabricating information.
+
+        ==================================================
+        OUTPUT
+        ==================================================
+
+        Return ONLY valid JSON:
+
+        {{
+            "atsScore": 0,
+            "strengths": [],
+            "missingKeywords": [],
+            "matchingKeywords": [],
+            "recommendations": [],
+            "experienceAnalysis": "",
+            "educationAnalysis": "",
+            "skillsAnalysis": "",
+            "projectAnalysis": "",
+            "certificateAnalysis": ""
+        }}
+        """
 
         response = client.chat.completions.create(
             model=OPENROUTER_MODEL,
@@ -1047,28 +1111,24 @@ async def optimize_resume(data: ResumeRequest):
 
         For every existing project:
 
-        - Preserve ID.
-        - Preserve project name.
-        - Normalize project name capitalization.
-        - Improve description.
-        - Improve grammar and clarity.
-        - Improve ATS relevance.
-        - Preserve meaning.
+        - Preserve the original ID.
+        - Preserve the project name exactly as entered, including capitalization.
+        - Improve the project description for grammar, clarity, professionalism, and ATS relevance.
+        - Preserve the original meaning.
+        - Use bullet points when appropriate.
+        - Do not create new projects.
 
-        Use bullet points when appropriate.
+        IMPORTANT:
 
-        Do not invent:
+        - Optimize ONLY the existing project description.
+        - NEVER use the project name as the description.
+        - NEVER invent technologies, tools, clients, users, metrics, achievements, results, or responsibilities.
+        - If the project description is empty, null, or missing, return an empty "optimized" value.
+        - If the description is empty, DO NOT generate or infer a description from the project name.
+        - Preserve the same number of projects and their IDs.
 
-        - technologies
-        - clients
-        - users
-        - metrics
-        - achievements
-        - results
+        If there are no projects, return an empty projects array.
 
-        Do not create new projects.
-
-        If there are no projects, do not create a Projects section.
 
         ==================================================
         CERTIFICATES
@@ -1150,44 +1210,21 @@ async def optimize_resume(data: ResumeRequest):
         ATS SCORE
         ==================================================
 
-        The original ATS score is:
+        The original ATS score is {original_ats_score}.
 
-        {original_ats_score}
+        The optimized resume is an improved version of the original resume.
 
-        Calculate the ATS score for the FINAL optimized resume.
+        - The optimized score must NEVER be lower than the original score.
+        - Use the original score as the baseline.
+        - Increase the score only for truthful improvements.
+        - Improvements may include better keyword alignment, clarity, grammar,
+        ATS readability, summary, skills, experience, education, projects,
+        or certifications.
+        - Never increase the score because of invented or unsupported information.
+        - If there is no meaningful improvement, keep the original score.
 
-        Evaluate:
+        optimizedScore >= originalScore
 
-        - keyword relevance
-        - keyword matching
-        - target-job alignment
-        - skills relevance
-        - experience relevance
-        - education relevance
-        - project relevance
-        - certification relevance
-        - summary relevance
-        - grammar
-        - clarity
-        - consistency
-        - completeness
-        - ATS readability
-        - formatting
-        - natural keyword usage
-
-        If meaningful truthful improvements are made, the optimized score may
-        increase.
-
-        If no meaningful improvement is possible without inventing information,
-        keep the score unchanged.
-
-        Never artificially increase the score.
-
-        Never decrease the score simply because wording was improved.
-
-        Do not give points for unsupported information.
-
-        The final score must represent the FINAL optimized resume.
 
         ==================================================
         ANALYSIS
@@ -1336,8 +1373,7 @@ async def optimize_resume(data: ResumeRequest):
                 {{
                     "id": "",
                     "projectName": "",
-                    "original": "",
-                    "optimized": "",
+                    "projectDescription: "",
                     "reason": ""
                 }}
             ],
@@ -1410,6 +1446,27 @@ async def optimize_resume(data: ResumeRequest):
                 status_code=500,
                 detail="OpenRouter returned invalid optimization format"
             )
+
+        optimized_analysis = optimization.get(
+            "optimizedAnalysis",
+            {}
+        )
+
+        ai_score = optimized_analysis.get(
+            "atsScore",
+            original_ats_score
+        )
+
+        if not isinstance(ai_score, (int, float)):
+            ai_score = original_ats_score
+
+        optimized_analysis["atsScore"] = max(
+            int(original_ats_score),
+            min(100, int(ai_score))
+        )
+
+        optimization["optimizedAnalysis"] = optimized_analysis
+
 
         return {
             "success": True,

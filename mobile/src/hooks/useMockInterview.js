@@ -14,12 +14,12 @@ const useMockInterview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // CREATE
   const create = async ({
     targetJob,
     interviewCategory,
     responseMode,
     numberOfQuestions,
-    token,
   }) => {
     try {
       setLoading(true);
@@ -30,7 +30,6 @@ const useMockInterview = () => {
         interviewCategory,
         responseMode,
         numberOfQuestions,
-        token,
       });
 
       return result;
@@ -42,15 +41,14 @@ const useMockInterview = () => {
     }
   };
 
-  const getById = async (interviewId, token) => {
+  // GET BY ID
+  const getById = async (interviewId) => {
     try {
       setLoading(true);
       setError(null);
 
-      const result = await getMockInterview(
-        interviewId,
-        token,
-      );
+      const result =
+        await getMockInterview(interviewId);
 
       return result;
     } catch (error) {
@@ -61,111 +59,112 @@ const useMockInterview = () => {
     }
   };
 
+  // SAVE ANSWER
   const saveAnswer = async ({
     interviewId,
     questionNumber,
     answer,
     audioUrl,
     timeUsed,
-    token,
   }) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await saveInterviewAnswer({
-        interviewId,
-        questionNumber,
-        answer,
-        audioUrl,
-        timeUsed,
-        token,
-      });
-
-      return result;
-    } catch (error) {
-      setError(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const analyzeAnswer = async ({
-    interviewId,
-    questionNumber,
-    token,
-  }) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await analyzeInterviewAnswer({
-        interviewId,
-        questionNumber,
-        token,
-      });
-
-      return result;
-    } catch (error) {
-      setError(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const analyzeSession = async (
-    interviewId,
-    token,
-  ) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await analyzeInterviewSession(
-        interviewId,
-        token,
-      );
-
-      return result;
-    } catch (error) {
-      setError(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const complete = async (
-    interviewId,
-    token,
-  ) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await completeMockInterview(
-        interviewId,
-        token,
-      );
-
-      return result;
-    } catch (error) {
-      setError(error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getCompleted = async (token) => {
     try {
       setLoading(true);
       setError(null);
 
       const result =
-        await getCompletedMockInterviews(token);
+        await saveInterviewAnswer({
+          interviewId,
+          questionNumber,
+          answer,
+          audioUrl,
+          timeUsed,
+        });
+
+      return result;
+    } catch (error) {
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ANALYZE ANSWER
+  const analyzeAnswer = async ({
+    interviewId,
+    questionNumber,
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result =
+        await analyzeInterviewAnswer({
+          interviewId,
+          questionNumber,
+        });
+
+      return result;
+    } catch (error) {
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ANALYZE SESSION
+  const analyzeSession = async (
+    interviewId,
+  ) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result =
+        await analyzeInterviewSession(
+          interviewId,
+        );
+
+      return result;
+    } catch (error) {
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // COMPLETE
+  const complete = async (
+    interviewId,
+  ) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result =
+        await completeMockInterview(
+          interviewId,
+        );
+
+      return result;
+    } catch (error) {
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // GET COMPLETED
+  const getCompleted = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result =
+        await getCompletedMockInterviews();
 
       return result;
     } catch (error) {
@@ -197,4 +196,3 @@ const useMockInterview = () => {
 };
 
 export default useMockInterview;
-

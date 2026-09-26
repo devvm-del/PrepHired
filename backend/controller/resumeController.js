@@ -1199,9 +1199,10 @@ const optimizeResume = async (req, res) => {
 
       // If user had NO original description,
       // AI optimized description MUST remain empty.
+      /*
       if (!originalDescription) {
         optimizedExperience.description = "";
-      }
+      }*/
 
       // If user DID provide a description,
       // use the AI description if provided.
@@ -1326,10 +1327,11 @@ const optimizeResume = async (req, res) => {
 
       // If user had NO original description,
       // AI optimized description MUST remain empty.
+      
       if (!originalDescription) {
         optimizedEducation.description = "";
       }
-
+      
       // If user DID provide a description,
       // the AI description can be stored.
       if (
@@ -1350,6 +1352,7 @@ const optimizeResume = async (req, res) => {
       resume.skills = optimization.skills.optimized;
     }
 
+    /*
     if (Array.isArray(optimization.projects)) {
       optimization.projects.forEach((optimizedProject) => {
         const project = resume.projects.id(optimizedProject.id);
@@ -1359,6 +1362,26 @@ const optimizeResume = async (req, res) => {
         }
       });
     }
+    */
+
+    if (Array.isArray(optimization.projects)) {
+      optimization.projects.forEach((optimizedProject) => {
+        const project = resume.projects.id(
+          optimizedProject.id
+        );
+
+        if (!project) return;
+
+        const optimizedDescription =
+          optimizedProject.optimized?.trim();
+
+        if (optimizedDescription) {
+          project.projectDescription =
+            optimizedDescription;
+        }
+      });
+    }
+
 
     if (optimization.certificates?.optimized !== undefined) {
       resume.certificates = optimization.certificates.optimized;

@@ -19,7 +19,7 @@ const createMockInterview = async (req, res) => {
     }
 
     if (!targetJob?.trim()) {
-      errors.targetJob = "Target job is required";
+      errors.targetJob = "Please enter the role you are targeting.";
     }
 
     const allowedCategories = [

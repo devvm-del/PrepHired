@@ -417,6 +417,148 @@ const AiGeneratedResume = ({ navigation }) => {
   const optimizedExperiences =
     optimization?.workExperiences || [];
 
+  /*
+   * ORIGINAL TAB
+   * Always render resume.workExperiences
+   */
+  if (activeTab === "original") {
+    if (!originalExperiences.length) {
+      return (
+        <Text
+          style={{
+            color: "#71717A",
+            fontSize: 13,
+          }}
+        >
+          No work experience added.
+        </Text>
+      );
+    }
+
+    return originalExperiences.map(
+      (experience, index) => {
+        const jobTitle =
+          getText(
+            experience.jobTitle
+          ).trim();
+
+        const company =
+          getText(
+            experience.company
+          ).trim();
+
+        const location =
+          getText(
+            experience.location
+          ).trim();
+
+        const periodOfEmployment =
+          getText(
+            experience.periodOfEmployment
+          ).trim();
+
+        const description =
+          getText(
+            experience.description
+          ).trim();
+
+        return (
+          <View
+            key={
+              experience._id ||
+              experience.id ||
+              index
+            }
+            style={{
+              marginBottom: 15,
+              paddingBottom: 15,
+              borderBottomWidth:
+                index !==
+                originalExperiences.length - 1
+                  ? 1
+                  : 0,
+              borderBottomColor:
+                "#3F3F4A",
+            }}
+          >
+            {jobTitle ? (
+              <Text
+                style={{
+                  color: "#F8FAFC",
+                  fontSize: 14,
+                  fontWeight: "700",
+                }}
+              >
+                {jobTitle}
+              </Text>
+            ) : null}
+
+            {company ? (
+              <Text
+                style={{
+                  color: "#60A5FA",
+                  fontSize: 12,
+                  fontWeight: "600",
+                  marginTop: 3,
+                }}
+              >
+                {company}
+              </Text>
+            ) : null}
+
+            {location ? (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 11,
+                  marginTop: 3,
+                }}
+              >
+                {location}
+              </Text>
+            ) : null}
+
+            {periodOfEmployment ? (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 11,
+                  marginTop: 3,
+                }}
+              >
+                {periodOfEmployment}
+              </Text>
+            ) : null}
+
+            {description ? (
+              <View
+                style={{
+                  marginTop: 8,
+                }}
+              >
+                {renderText(description)}
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 13,
+                  marginTop: 8,
+                }}
+              >
+                No work experience description added.
+              </Text>
+            )}
+          </View>
+        );
+      }
+    );
+  }
+
+  /*
+   * OPTIMIZED TAB
+   * Always render optimization.workExperiences
+   */
   if (!optimizedExperiences.length) {
     return (
       <Text
@@ -474,6 +616,7 @@ const AiGeneratedResume = ({ navigation }) => {
       return (
         <View
           key={
+            experience._id ||
             experience.id ||
             index
           }
@@ -563,54 +706,6 @@ const AiGeneratedResume = ({ navigation }) => {
   );
 };
 
-
-  /*
-   * EDUCATION
-   *
-   * Backend AI object:
-   *
-   * {
-   *   id,
-   *   school,
-   *   degreeField,
-   *   location,
-   *   schoolYear,
-   *   description,
-   *   reason
-   * }
-   *
-   * IMPORTANT:
-   *
-   * The optimized education object DOES NOT use:
-   *
-   * school.optimized
-   * degreeField.optimized
-   * location.optimized
-   * education.optimized
-   *
-   * Instead, these are direct strings.
-   */
-  /*
- * EDUCATION
- *
- * Original education:
- * resume.educations
- *
- * AI optimized education:
- * optimization.educations
- *
- * AI education schema:
- *
- * {
- *   id,
- *   school,
- *   degreeField,
- *   location,
- *   schoolYear,
- *   description,
- *   reason
- * }
- */
 
 const renderEducation = () => {
   const originalEducations =
@@ -754,8 +849,6 @@ const renderEducation = () => {
       }
     );
   }
-
-
 
   if (!optimizedEducations.length) {
     return (
@@ -906,7 +999,7 @@ const renderEducation = () => {
   /*
    * PROJECTS
    */
-
+  /*
   const renderProjects = () => {
     const originalProjects =
       resume?.projects || [];
@@ -1037,6 +1130,214 @@ const renderEducation = () => {
       }
     );
   };
+  */
+ const renderProjects = () => {
+  const originalProjects =
+    resume?.projects || [];
+
+  const optimizedProjects =
+    resume?.aiOptimization?.projects || [];
+
+  /*
+   * ORIGINAL TAB
+   * Always render resume.projects
+   */
+  if (activeTab === "original") {
+    if (!originalProjects.length) {
+      return (
+        <Text
+          style={{
+            color: "#71717A",
+            fontSize: 13,
+          }}
+        >
+          No projects added.
+        </Text>
+      );
+    }
+
+    return originalProjects.map(
+      (project, index) => {
+        if (!project) {
+          return null;
+        }
+
+        const projectName =
+          getText(
+            project.projectName
+          ).trim();
+
+        const description =
+          getText(
+            project.projectDescription
+          ).trim();
+
+        /*
+         * Don't render completely empty
+         * project objects.
+         */
+        if (
+          !projectName &&
+          !description
+        ) {
+          return null;
+        }
+
+        return (
+          <View
+            key={
+              project._id ||
+              project.id ||
+              index
+            }
+            style={{
+              borderBottomWidth:
+                index !==
+                originalProjects.length - 1
+                  ? 1
+                  : 0,
+              borderBottomColor:
+                "#3F3F4A",
+            }}
+          >
+            {projectName ? (
+              <Text
+                style={{
+                  color: "#F8FAFC",
+                  fontSize: 14,
+                  fontWeight: "700",
+                }}
+              >
+                {projectName}
+              </Text>
+            ) : null}
+
+            {description ? (
+              <View
+                style={{
+                  marginTop: 8,
+                }}
+              >
+                {renderText(description)}
+              </View>
+            ) : (
+              <Text
+                style={{
+                  color: "#71717A",
+                  fontSize: 13,
+                  marginTop: 8,
+                }}
+              >
+                No project description added.
+              </Text>
+            )}
+          </View>
+        );
+      }
+    );
+  }
+
+  /*
+   * AI OPTIMIZED TAB
+   * Always render resume.aiOptimization.projects
+   */
+  if (!optimizedProjects.length) {
+    return (
+      <Text
+        style={{
+          color: "#71717A",
+          fontSize: 13,
+        }}
+      >
+        No optimized projects added.
+      </Text>
+    );
+  }
+
+  return optimizedProjects.map(
+    (project, index) => {
+      if (!project) {
+        return null;
+      }
+
+      const projectName =
+        getText(
+          project.projectName
+        ).trim();
+
+      const projectDescription =
+        getText(
+          project.projectDescription
+        ).trim();
+
+      /*
+       * Don't render completely empty
+       * AI project objects.
+       */
+      if (
+        !projectName &&
+        !description
+      ) {
+        return null;
+      }
+
+      return (
+        <View
+          key={
+            project.id ||
+            index
+          }
+          style={{
+            marginBottom: 15,
+            paddingBottom: 15,
+            borderBottomWidth:
+              index !==
+              optimizedProjects.length - 1
+                ? 1
+                : 0,
+            borderBottomColor:
+              "#3F3F4A",
+          }}
+        >
+          {projectName ? (
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
+              {projectName}
+            </Text>
+          ) : null}
+
+          {projectDescription ? (
+            <View
+              style={{
+                marginTop: 8,
+              }}
+            >
+              {renderText(projectDescription)}
+            </View>
+          ) : (
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 13,
+                marginTop: 8,
+              }}
+            >
+              No project description added.
+            </Text>
+          )}
+        </View>
+      );
+    }
+  );
+};
+
+ 
+
 
   /*
    * CERTIFICATES

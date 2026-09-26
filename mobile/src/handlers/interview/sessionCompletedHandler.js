@@ -3,23 +3,22 @@ export const sessionCompletedHandler = ({
   mockInterview,
   getById,
   navigation,
-  token,
   setInterview,
   setLoading,
 }) => {
   const loadInterview = async () => {
     if (!mockInterviewId) {
-      setInterview(mockInterview || null);
+      setInterview(
+        mockInterview || null,
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      const result = await getById(
-        mockInterviewId,
-        token,
-      );
+      const result =
+        await getById(mockInterviewId);
 
       setInterview(
         result?.mockInterview ||
@@ -45,7 +44,6 @@ export const sessionCompletedHandler = ({
       "ReviewAnswer",
       {
         mockInterviewId,
-        token,
       },
     );
   };

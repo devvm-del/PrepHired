@@ -21,15 +21,6 @@ const Interview = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  /*
-    Pass your existing authentication token when
-    navigating to this screen.
-
-    Example:
-    navigation.navigate("Interview", {
-      token: yourExistingToken,
-    });
-  */
   const token = route.params?.token || null;
 
   const { create, loading } = useMockInterview();
@@ -138,7 +129,7 @@ const Interview = () => {
         </View>
 
         {/* INTERVIEW CATEGORY */}
-        <View style={{ marginBottom: 24 }}>
+        <View style={{ marginBottom: 24, marginTop: 15}}>
           <Text
             style={{
               color: "#F8FAFC",

@@ -35,7 +35,6 @@ const ReviewAnswer = () => {
 
   const {
     mockInterviewId,
-    token,
   } = route.params || {};
 
   const {
@@ -53,7 +52,6 @@ const ReviewAnswer = () => {
   } = reviewAnswerHandler({
     mockInterviewId,
     getById,
-    token,
     setInterview,
     setLoading,
   });
@@ -77,7 +75,6 @@ const ReviewAnswer = () => {
         totalQuestions: questions.length,
         question,
         analysis: question,
-        token,
       },
     );
   };
@@ -306,19 +303,6 @@ const ReviewAnswer = () => {
             );
           })
         )}
-
-        <Button
-          title="Back to Results"
-          onPress={() =>
-            navigation.navigate(
-              "SessionCompleted",
-              {
-                mockInterviewId,
-                token,
-              },
-            )
-          }
-        />
       </ScrollView>
     </View>
   );

@@ -1,7 +1,6 @@
 export const reviewAnswerHandler = ({
   mockInterviewId,
   getById,
-  token,
   setInterview,
   setLoading,
 }) => {
@@ -13,10 +12,8 @@ export const reviewAnswerHandler = ({
     try {
       setLoading(true);
 
-      const result = await getById(
-        mockInterviewId,
-        token,
-      );
+      const result =
+        await getById(mockInterviewId);
 
       setInterview(
         result?.mockInterview || null,

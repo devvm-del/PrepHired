@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useState,
+  useRef,
 } from "react";
 
 import {
@@ -9,6 +10,8 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Platform,
+  PermissionsAndroid,
 } from "react-native";
 
 import {
@@ -17,6 +20,7 @@ import {
 } from "@react-navigation/native";
 
 import * as Speech from "expo-speech";
+import Voice from "@react-native-voice/voice";
 
 import InterviewHeader from "../../components/InterviewHeader";
 import Button from "../../components/Button";
@@ -39,12 +43,12 @@ const QuestionAndAnswer = () => {
     interviewCategory,
     responseMode,
     numberOfQuestions,
-    token,
   } = route.params || {};
 
   const {
     saveAnswer,
-    analyzeAnswer,
+    analyzeSession,
+    complete,
     loading,
   } = useMockInterview();
 
@@ -59,6 +63,15 @@ const QuestionAndAnswer = () => {
 
   const [isTextMode, setIsTextMode] =
     useState(responseMode === "Text");
+
+  // Voice states
+  const [isListening, setIsListening] =
+    useState(false);
+
+  const [voiceError, setVoiceError] =
+    useState("");
+
+  const submittingRef = useRef(false);
 
   const questions =
     mockInterview?.questions || [];
@@ -88,9 +101,42 @@ const QuestionAndAnswer = () => {
     setTimeLeft,
     navigation,
     saveAnswer,
-    analyzeAnswer,
-    token,
+    analyzeSession,
+    complete,
   });
+
+  /*
+    SUBMIT ANSWER
+  */
+  const handleSubmitAnswer = async () => {
+    if (submittingRef.current) {
+      return;
+    }
+
+    // Stop microphone before submitting
+    if (isListening) {
+      try {
+        await Voice.stop();
+      } catch (error) {
+        console.log("Voice stop error:", error);
+      }
+
+      setIsListening(false);
+    }
+
+    submittingRef.current = true;
+
+    try {
+      await handleSaveAndAnalyze();
+    } catch (error) {
+      console.error(
+        "Submit answer error:",
+        error,
+      );
+
+      submittingRef.current = false;
+    }
+  };
 
   /*
     SPEAK QUESTION IN AUDIO MODE
@@ -100,11 +146,14 @@ const QuestionAndAnswer = () => {
       const timer = setTimeout(() => {
         Speech.stop();
 
-        Speech.speak(currentQuestionText, {
-          language: "en-US",
-          pitch: 1,
-          rate: 0.9,
-        });
+        Speech.speak(
+          currentQuestionText,
+          {
+            language: "en-US",
+            pitch: 1,
+            rate: 0.9,
+          },
+        );
       }, 300);
 
       return () => {
@@ -125,11 +174,175 @@ const QuestionAndAnswer = () => {
   ]);
 
   /*
+    VOICE RECOGNITION SETUP
+  */
+  useEffect(() => {
+    Voice.onSpeechStart = () => {
+      setIsListening(true);
+      setVoiceError("");
+    };
+
+    Voice.onSpeechEnd = () => {
+      setIsListening(false);
+    };
+
+    Voice.onSpeechResults = (event) => {
+      const results = event.value || [];
+
+      if (results.length > 0) {
+        setResponse(results[0]);
+      }
+    };
+
+    Voice.onSpeechPartialResults = (event) => {
+      const results = event.value || [];
+
+      if (results.length > 0) {
+        setResponse(results[0]);
+      }
+    };
+
+    Voice.onSpeechError = (event) => {
+      console.log(
+        "Speech recognition error:",
+        event,
+      );
+
+      setIsListening(false);
+
+      setVoiceError(
+        "Unable to recognize speech. Please try again.",
+      );
+    };
+
+    return () => {
+      Voice.destroy()
+        .then(() => {
+          Voice.removeAllListeners();
+        });
+    };
+  }, []);
+
+  /*
+    REQUEST MICROPHONE PERMISSION - ANDROID
+  */
+  const requestMicrophonePermission =
+    async () => {
+      if (Platform.OS !== "android") {
+        return true;
+      }
+
+      try {
+        const granted =
+          await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+            {
+              title:
+                "Microphone Permission",
+              message:
+                "This app needs access to your microphone to record your interview answer.",
+              buttonPositive: "Allow",
+              buttonNegative: "Deny",
+            },
+          );
+
+        return (
+          granted ===
+          PermissionsAndroid.RESULTS.GRANTED
+        );
+      } catch (error) {
+        console.error(
+          "Microphone permission error:",
+          error,
+        );
+
+        return false;
+      }
+    };
+
+  /*
+    START / STOP SPEECH RECOGNITION
+  */
+  const toggleRecording = async () => {
+    if (submittingRef.current) {
+      return;
+    }
+
+    setVoiceError("");
+
+    /*
+      STOP RECORDING
+    */
+    if (isListening) {
+      try {
+        await Voice.stop();
+      } catch (error) {
+        console.log(
+          "Stop voice error:",
+          error,
+        );
+      }
+
+      setIsListening(false);
+      return;
+    }
+
+    /*
+      REQUEST MICROPHONE PERMISSION
+    */
+    const permission =
+      await requestMicrophonePermission();
+
+    if (!permission) {
+      setVoiceError(
+        "Microphone permission is required.",
+      );
+
+      return;
+    }
+
+    /*
+      Stop the AI question audio first.
+    */
+    Speech.stop();
+
+    /*
+      Start speech recognition.
+    */
+    try {
+      setResponse("");
+
+      await Voice.start("en-US");
+
+      setIsListening(true);
+    } catch (error) {
+      console.error(
+        "Start voice error:",
+        error,
+      );
+
+      setIsListening(false);
+
+      setVoiceError(
+        "Could not start voice recognition.",
+      );
+    }
+  };
+
+  /*
     RESET TIMER WHEN QUESTION CHANGES
   */
   useEffect(() => {
     setTimeLeft(60);
     setResponse("");
+
+    submittingRef.current = false;
+
+    // Stop microphone when moving to next question
+    if (isListening) {
+      Voice.stop().catch(() => {});
+      setIsListening(false);
+    }
   }, [currentQuestion]);
 
   /*
@@ -137,22 +350,19 @@ const QuestionAndAnswer = () => {
   */
   useEffect(() => {
     if (timeLeft <= 0) {
-      handleTimeOut();
+      handleSubmitAnswer();
       return;
     }
 
-    const timer = setInterval(() => {
-      setTimeLeft((previous) => {
-        if (previous <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-
-        return previous - 1;
-      });
+    const timer = setTimeout(() => {
+      setTimeLeft(
+        (previous) => previous - 1,
+      );
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [
     timeLeft,
     currentQuestion,
@@ -161,18 +371,39 @@ const QuestionAndAnswer = () => {
   /*
     SWITCH RESPONSE MODE
   */
-  const handleSwitchMode = () => {
+  const handleSwitchMode = async () => {
+    if (submittingRef.current) {
+      return;
+    }
+
     Speech.stop();
 
-    setIsTextMode((previous) => !previous);
+    if (isListening) {
+      try {
+        await Voice.stop();
+      } catch (error) {
+        console.log(error);
+      }
+
+      setIsListening(false);
+    }
+
+    setIsTextMode(
+      (previous) => !previous,
+    );
+
     setResponse("");
     setTimeLeft(60);
+    setVoiceError("");
   };
 
   /*
     NO QUESTIONS
   */
-  if (!mockInterview || !currentQuestionData) {
+  if (
+    !mockInterview ||
+    !currentQuestionData
+  ) {
     return (
       <View
         style={[
@@ -196,7 +427,9 @@ const QuestionAndAnswer = () => {
         </Text>
 
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() =>
+            navigation.goBack()
+          }
           style={{
             marginTop: 20,
             backgroundColor: "#2563EB",
@@ -221,7 +454,9 @@ const QuestionAndAnswer = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={
+          styles.scrollContent
+        }
         showsVerticalScrollIndicator={false}
       >
         <InterviewHeader
@@ -242,7 +477,8 @@ const QuestionAndAnswer = () => {
           <View
             style={{
               flexDirection: "row",
-              justifyContent: "space-between",
+              justifyContent:
+                "space-between",
               marginBottom: 8,
             }}
           >
@@ -270,7 +506,8 @@ const QuestionAndAnswer = () => {
           <View
             style={{
               height: 6,
-              backgroundColor: "#25252F",
+              backgroundColor:
+                "#25252F",
               borderRadius: 20,
               overflow: "hidden",
             }}
@@ -278,10 +515,16 @@ const QuestionAndAnswer = () => {
             <View
               style={{
                 width: `${
-                  (currentQuestion / totalQuestions) * 100
+                  totalQuestions > 0
+                    ? (
+                        currentQuestion /
+                        totalQuestions
+                      ) * 100
+                    : 0
                 }%`,
                 height: "100%",
-                backgroundColor: "#2563EB",
+                backgroundColor:
+                  "#2563EB",
               }}
             />
           </View>
@@ -292,7 +535,8 @@ const QuestionAndAnswer = () => {
           style={{
             flexDirection: "row",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             marginBottom: 20,
           }}
         >
@@ -303,15 +547,21 @@ const QuestionAndAnswer = () => {
               fontWeight: "700",
             }}
           >
-            {isTextMode ? "TEXT RESPONSE" : "AUDIO RESPONSE"}
+            {isTextMode
+              ? "TEXT RESPONSE"
+              : "AUDIO RESPONSE"}
           </Text>
 
           <TouchableOpacity
-            onPress={handleSwitchMode}
+            onPress={
+              handleSwitchMode
+            }
             style={{
-              backgroundColor: "#25252F",
+              backgroundColor:
+                "#25252F",
               borderWidth: 1,
-              borderColor: "#3F3F46",
+              borderColor:
+                "#3F3F46",
               paddingHorizontal: 13,
               paddingVertical: 8,
               borderRadius: 8,
@@ -324,7 +574,10 @@ const QuestionAndAnswer = () => {
                 fontWeight: "700",
               }}
             >
-              Switch to {isTextMode ? "Audio" : "Text"}
+              Switch to{" "}
+              {isTextMode
+                ? "Audio"
+                : "Text"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -332,7 +585,8 @@ const QuestionAndAnswer = () => {
         {/* AI INTERVIEWER */}
         <View
           style={{
-            backgroundColor: "#25252F",
+            backgroundColor:
+              "#25252F",
             borderRadius: 18,
             padding: 22,
             marginBottom: 20,
@@ -363,14 +617,18 @@ const QuestionAndAnswer = () => {
 
           {!isTextMode && (
             <TouchableOpacity
-              onPress={handleReplayQuestion}
+              onPress={
+                handleReplayQuestion
+              }
               style={{
-                alignSelf: "flex-start",
+                alignSelf:
+                  "flex-start",
                 marginTop: 18,
                 paddingHorizontal: 14,
                 paddingVertical: 9,
                 borderRadius: 8,
-                backgroundColor: "#18181F",
+                backgroundColor:
+                  "#18181F",
               }}
             >
               <Text
@@ -390,7 +648,8 @@ const QuestionAndAnswer = () => {
         {isTextMode ? (
           <View
             style={{
-              backgroundColor: "#25252F",
+              backgroundColor:
+                "#25252F",
               borderRadius: 16,
               padding: 16,
               marginBottom: 24,
@@ -398,7 +657,9 @@ const QuestionAndAnswer = () => {
           >
             <TextInput
               value={response}
-              onChangeText={setResponse}
+              onChangeText={
+                setResponse
+              }
               placeholder="Type your answer here..."
               placeholderTextColor="#71717A"
               multiline
@@ -412,14 +673,16 @@ const QuestionAndAnswer = () => {
             />
           </View>
         ) : (
-          /* AUDIO PLACEHOLDER */
+          /* SPEECH-TO-TEXT RESPONSE */
           <View
             style={{
-              backgroundColor: "#25252F",
+              backgroundColor:
+                "#25252F",
               borderRadius: 16,
-              padding: 30,
+              padding: 24,
               marginBottom: 24,
-              alignItems: "center",
+              alignItems:
+                "center",
             }}
           >
             <Text
@@ -428,7 +691,9 @@ const QuestionAndAnswer = () => {
                 marginBottom: 12,
               }}
             >
-              🎙️
+              {isListening
+                ? "🔴"
+                : "🎙️"}
             </Text>
 
             <Text
@@ -436,29 +701,79 @@ const QuestionAndAnswer = () => {
                 color: "#F8FAFC",
                 fontSize: 16,
                 fontWeight: "700",
-                marginBottom: 6,
+                marginBottom: 8,
               }}
             >
-              Audio Response
+              {isListening
+                ? "Listening..."
+                : "Voice Response"}
             </Text>
 
             <Text
               style={{
                 color: "#71717A",
                 fontSize: 13,
-                textAlign: "center",
+                textAlign:
+                  "center",
+                marginBottom: 16,
               }}
             >
-              Audio recording can be added here.
+              {isListening
+                ? "Speak your answer. Tap the button when you are finished."
+                : "Tap the button and speak your interview answer."}
             </Text>
 
+            {/* LIVE TRANSCRIPT */}
+            {response.length > 0 && (
+              <View
+                style={{
+                  width: "100%",
+                  backgroundColor:
+                    "#18181F",
+                  borderRadius: 12,
+                  padding: 15,
+                  marginBottom: 18,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#60A5FA",
+                    fontSize: 11,
+                    fontWeight: "800",
+                    marginBottom: 7,
+                  }}
+                >
+                  YOUR ANSWER
+                </Text>
+
+                <Text
+                  style={{
+                    color: "#F8FAFC",
+                    fontSize: 15,
+                    lineHeight: 23,
+                  }}
+                >
+                  {response}
+                </Text>
+              </View>
+            )}
+
+            {/* RECORD BUTTON */}
             <TouchableOpacity
+              onPress={
+                toggleRecording
+              }
+              disabled={loading}
               style={{
-                marginTop: 18,
-                backgroundColor: "#2563EB",
-                paddingHorizontal: 22,
-                paddingVertical: 12,
+                backgroundColor:
+                  isListening
+                    ? "#DC2626"
+                    : "#2563EB",
+                paddingHorizontal: 25,
+                paddingVertical: 13,
                 borderRadius: 10,
+                minWidth: 150,
+                alignItems: "center",
               }}
             >
               <Text
@@ -467,25 +782,50 @@ const QuestionAndAnswer = () => {
                   fontWeight: "700",
                 }}
               >
-                Record Now
+                {isListening
+                  ? "Stop Listening"
+                  : response
+                    ? "Record Again"
+                    : "Record Now"}
               </Text>
             </TouchableOpacity>
+
+            {voiceError ? (
+              <Text
+                style={{
+                  color: "#F87171",
+                  fontSize: 12,
+                  textAlign:
+                    "center",
+                  marginTop: 12,
+                }}
+              >
+                {voiceError}
+              </Text>
+            ) : null}
           </View>
         )}
-
-        {/* NEXT / SUBMIT */}
-        <Button
-          title={
-            loading
-              ? "Analyzing Answer..."
-              : currentQuestion === totalQuestions
-                ? "Submit Interview"
-                : "Submit Answer"
-          }
-          onPress={handleSaveAndAnalyze}
-          disabled={loading}
-        />
       </ScrollView>
+
+      <Button
+        style={{ marginBottom: 65 }}
+        title={
+          loading
+            ? "Saving..."
+            : currentQuestion ===
+                totalQuestions
+              ? "Submit Interview"
+              : "Submit Answer"
+        }
+        loading={loading}
+        onPress={
+          handleSubmitAnswer
+        }
+        disabled={
+          loading ||
+          submittingRef.current
+        }
+      />
     </View>
   );
 };

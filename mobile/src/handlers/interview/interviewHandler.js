@@ -7,7 +7,6 @@ export const interviewHandler = ({
   selectedNumberOfQuestions,
   navigation,
   create,
-  token,
 }) => {
   const handleTargetJobChange = (text) => {
     setTargetJob(text);
@@ -16,27 +15,38 @@ export const interviewHandler = ({
 
   const handleStartInterview = async () => {
     if (!targetJob.trim()) {
-      setTargetJobError("Please enter the role you are targeting.");
+      setTargetJobError(
+        "Please enter the role you are targeting.",
+      );
       return;
     }
 
     try {
       const result = await create({
         targetJob: targetJob.trim(),
-        interviewCategory: selectedInterviewCategory,
-        responseMode: selectedResponseMode,
-        numberOfQuestions: Number(selectedNumberOfQuestions),
-        token,
+        interviewCategory:
+          selectedInterviewCategory,
+        responseMode:
+          selectedResponseMode,
+        numberOfQuestions:
+          Number(selectedNumberOfQuestions),
       });
 
-      navigation.navigate("QuestionAndAnswer", {
-        mockInterview: result.mockInterview,
-        targetJob: targetJob.trim(),
-        interviewCategory: selectedInterviewCategory,
-        responseMode: selectedResponseMode,
-        numberOfQuestions: Number(selectedNumberOfQuestions),
-        token,
-      });
+      navigation.navigate(
+        "QuestionAndAnswer",
+        {
+          mockInterview:
+            result.mockInterview,
+          targetJob:
+            targetJob.trim(),
+          interviewCategory:
+            selectedInterviewCategory,
+          responseMode:
+            selectedResponseMode,
+          numberOfQuestions:
+            Number(selectedNumberOfQuestions),
+        },
+      );
     } catch (error) {
       setTargetJobError(
         error?.errors?.targetJob ||

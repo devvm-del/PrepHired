@@ -390,13 +390,7 @@ const optimizedProjectSchema = new mongoose.Schema(
       default: "",
     },
 
-    original: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-
-    optimized: {
+    projectDescription: {
       type: String,
       trim: true,
       default: "",

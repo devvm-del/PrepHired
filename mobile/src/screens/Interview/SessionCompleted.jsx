@@ -35,7 +35,6 @@ const SessionCompleted = () => {
   const {
     mockInterviewId,
     mockInterview,
-    token,
   } = route.params || {};
 
   const {
@@ -57,7 +56,6 @@ const SessionCompleted = () => {
     mockInterview,
     getById,
     navigation,
-    token,
     setInterview,
     setLoading,
   });
@@ -85,16 +83,13 @@ const SessionCompleted = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          padding: 24,
-          justifyContent: "center",
-        }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* SUCCESS ICON */}
         <View
           style={{
+            marginTop: 50,
             alignItems: "center",
             marginBottom: 20,
           }}
@@ -144,8 +139,8 @@ const SessionCompleted = () => {
         <View
           style={{
             backgroundColor: "#25252F",
-            borderRadius: 18,
             padding: 24,
+            borderRadius: 18,
             marginBottom: 20,
           }}
         >
@@ -199,8 +194,8 @@ const SessionCompleted = () => {
         <View
           style={{
             backgroundColor: "#25252F",
+            padding: 24,
             borderRadius: 18,
-            padding: 20,
             marginBottom: 24,
           }}
         >
@@ -300,34 +295,39 @@ const SessionCompleted = () => {
             })
           )}
         </View>
+      </ScrollView>
 
-        {/* BUTTONS */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          justifyContent: "center",
+          gap: 10,
+        }}
+      >
         <Button
-          title="Review Answers"
+          style={{
+            marginBottom: 65,
+            width: "48%",
+            backgroundColor: "#15151B",
+            borderWidth: 2,
+            borderColor: "#2563EB",
+          }}
+          title="Review Answer"
           onPress={handleReviewAnswers}
           disabled={loading}
         />
 
-        <TouchableOpacity
+        <Button
+          style={{
+            marginBottom: 15,
+            width: "48%",
+          }}
+          title="Done"
           onPress={handleDone}
           disabled={loading}
-          style={{
-            marginTop: 12,
-            paddingVertical: 14,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: "#71717A",
-              fontSize: 14,
-              fontWeight: "700",
-            }}
-          >
-            Done
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+        />
+      </View>
     </View>
   );
 };
