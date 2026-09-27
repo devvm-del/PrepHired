@@ -18,132 +18,152 @@ export const questionAndAnswerHandler = ({
     questions.length;
 
   const currentQuestionData =
-    questions[currentQuestion - 1];
+    questions[
+      currentQuestion - 1
+    ];
 
   const currentQuestionText =
-    currentQuestionData?.question || "";
+    currentQuestionData?.question ||
+    "";
 
-  const speakQuestion = () => {
-    return;
-  };
+  /*
+    =====================================================
+    SAVE ANSWER + MOVE TO NEXT QUESTION
+    =====================================================
+  */
 
-  const handleReplayQuestion = () => {
-    speakQuestion();
-  };
+  const handleSaveAndAnalyze =
+    async () => {
+      if (!mockInterview?._id) {
+        throw new Error(
+          "Mock interview was not found.",
+        );
+      }
 
-  const handleSaveAndAnalyze = async () => {
-    if (!mockInterview?._id) {
-      throw new Error(
-        "Mock interview was not found.",
-      );
-    }
+      if (!currentQuestionData) {
+        throw new Error(
+          "Question was not found.",
+        );
+      }
 
-    if (!currentQuestionData) {
-      throw new Error(
-        "Question was not found.",
-      );
-    }
+      try {
+        /*
+          SAVE CURRENT ANSWER
+        */
 
-    try {
-      /*
-        SAVE CURRENT ANSWER
-      */
-      await saveAnswer({
-        interviewId: mockInterview._id,
-        questionNumber: currentQuestion,
-        answer: response?.trim() || "",
-        audioUrl: "",
-        timeUsed: 60 - timeLeft,
-      });
+        await saveAnswer({
+          interviewId:
+            mockInterview._id,
 
-      /*
-        MORE QUESTIONS
-      */
-      if (
-        currentQuestion <
-        totalQuestions
-      ) {
-        setResponse("");
-        setTimeLeft(60);
+          questionNumber:
+            currentQuestion,
 
-        setCurrentQuestion(
-          (previous) => previous + 1,
+          answer:
+            response?.trim() || "",
+
+          audioUrl: "",
+
+          timeUsed:
+            60 - timeLeft,
+        });
+
+        /*
+          MORE QUESTIONS
+        */
+
+        if (
+          currentQuestion <
+          totalQuestions
+        ) {
+          setResponse("");
+
+          setTimeLeft(60);
+
+          setCurrentQuestion(
+            (previous) =>
+              previous + 1,
+          );
+
+          return;
+        }
+
+        /*
+          ALL QUESTIONS ANSWERED
+        */
+
+        const sessionResult =
+          await analyzeSession(
+            mockInterview._id,
+          );
+
+        /*
+          MARK INTERVIEW COMPLETE
+        */
+
+        const completedResult =
+          await complete(
+            mockInterview._id,
+          );
+
+        /*
+          NAVIGATE TO RESULTS
+        */
+
+        navigation.navigate(
+          "SessionCompleted",
+          {
+            mockInterviewId:
+              mockInterview._id,
+
+            mockInterview:
+              completedResult?.mockInterview ||
+              sessionResult?.mockInterview ||
+              mockInterview,
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Interview answer flow error:",
+          error,
         );
 
+        throw error;
+      }
+    };
+
+  /*
+    =====================================================
+    TIMER EXPIRED
+    =====================================================
+  */
+
+  const handleTimeOut =
+    async () => {
+      if (timeLeft > 0) {
         return;
       }
 
-      /*
-        ALL QUESTIONS ANSWERED.
-
-        Analyze the complete session
-        only after every answer has been saved.
-      */
-      const sessionResult =
-        await analyzeSession(
-          mockInterview._id,
+      try {
+        await handleSaveAndAnalyze();
+      } catch (error) {
+        console.error(
+          "Interview timeout error:",
+          error,
         );
-
-      /*
-        Mark as completed.
-      */
-      const completedResult =
-        await complete(
-          mockInterview._id,
-        );
-
-      /*
-        Navigate directly to results.
-      */
-      navigation.navigate(
-        "SessionCompleted",
-        {
-          mockInterviewId:
-            mockInterview._id,
-
-          mockInterview:
-            completedResult?.mockInterview ||
-            sessionResult?.mockInterview ||
-            mockInterview,
-        },
-      );
-    } catch (error) {
-      console.error(
-        "Interview answer flow error:",
-        error,
-      );
-
-      throw error;
-    }
-  };
-
-  /*
-    TIMER EXPIRED
-  */
-  const handleTimeOut = async () => {
-    if (timeLeft > 0) {
-      return;
-    }
-
-    try {
-      await handleSaveAndAnalyze();
-    } catch (error) {
-      console.error(
-        "Interview timeout error:",
-        error,
-      );
-    }
-  };
+      }
+    };
 
   return {
     questions,
+
     totalQuestions,
+
     currentQuestionData,
+
     currentQuestionText,
 
-    speakQuestion,
-    handleReplayQuestion,
     handleSaveAndAnalyze,
+
     handleTimeOut,
   };
 };

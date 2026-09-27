@@ -88,8 +88,8 @@ const ReviewAnswer = () => {
         <InterviewHeader
           navigation={navigation}
           interviewLabel="Review Answers"
-          navigateTo="SessionCompleted"
           showTimer={false}
+          goBack={true}
         />
 
         {loading ? (

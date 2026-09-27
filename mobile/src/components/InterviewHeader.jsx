@@ -11,6 +11,7 @@ const InterviewHeader = ({
   questionNumber,
   style,
   showTimer = true,
+  goBack = false,
 }) => {
   const [timeLeft, setTimeLeft] = useState(60);
 
@@ -39,7 +40,6 @@ const InterviewHeader = ({
     return () => clearInterval(timer);
   }, [timeLeft, showTimer]);
 
-  // Format timer
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -49,14 +49,29 @@ const InterviewHeader = ({
     ).padStart(2, "0")}`;
   };
 
+  const handleBack = () => {
+    if (goBack) {
+      navigation.goBack();
+      return;
+    }
+
+    if (navigateTo) {
+      navigation.navigate(navigateTo);
+    }
+  };
+
   return (
     <View style={[styles.header, style]}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => navigation.navigate(navigateTo)}
+        onPress={handleBack}
       >
-        <Ionicons name="arrow-back-outline" size={28} color="#F8FAFC" />
+        <Ionicons
+          name="exit-outline"
+          size={28}
+          color="#F8FAFC"
+        />
       </TouchableOpacity>
 
       {/* Interview Label */}
@@ -88,7 +103,10 @@ const InterviewHeader = ({
         <View
           style={{
             borderWidth: 2,
-            borderColor: timeLeft <= 10 ? "#DC2626" : "#2563EB",
+            borderColor:
+              timeLeft <= 10
+                ? "#DC2626"
+                : "#2563EB",
             width: 60,
             paddingVertical: 5,
             borderRadius: 16,
@@ -96,7 +114,10 @@ const InterviewHeader = ({
         >
           <Text
             style={{
-              color: timeLeft <= 10 ? "#DC2626" : "#F8FAFC",
+              color:
+                timeLeft <= 10
+                  ? "#DC2626"
+                  : "#F8FAFC",
               fontWeight: "600",
               textAlign: "center",
             }}
