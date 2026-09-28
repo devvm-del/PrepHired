@@ -19,6 +19,7 @@ import { interviewHandler } from "../handlers/interview/interviewHandler";
 
 const Interview = () => {
   const navigation = useNavigation();
+
   const route = useRoute();
 
   const token = route.params?.token || null;

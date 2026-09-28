@@ -3,13 +3,20 @@ export const questionAndAnswerHandler = ({
   currentQuestion,
   response,
   timeLeft,
+
   setCurrentQuestion,
   setResponse,
   setTimeLeft,
+  setAnswerError,
+
   navigation,
+
   saveAnswer,
+  analyzeAnswer,
   analyzeSession,
   complete,
+
+  processingRef,
 }) => {
   const questions =
     mockInterview?.questions || [];
@@ -18,38 +25,58 @@ export const questionAndAnswerHandler = ({
     questions.length;
 
   const currentQuestionData =
-    questions[
-      currentQuestion - 1
-    ];
+    questions[currentQuestion - 1];
 
   const currentQuestionText =
-    currentQuestionData?.question ||
-    "";
+    currentQuestionData?.question || "";
 
-  /*
-    =====================================================
-    SAVE ANSWER + MOVE TO NEXT QUESTION
-    =====================================================
-  */
+  // --------------------------------
+  // SAVE / NEXT / COMPLETE
+  // --------------------------------
 
-  const handleSaveAndAnalyze =
+  const handleSaveAndContinue =
     async () => {
+      // Prevent duplicate calls
+      if (processingRef?.current) {
+        return;
+      }
+
+      // Safety check
       if (!mockInterview?._id) {
         throw new Error(
           "Mock interview was not found.",
         );
       }
 
+      // Safety check
       if (!currentQuestionData) {
         throw new Error(
           "Question was not found.",
         );
       }
 
+      const trimmedAnswer =
+        response?.trim() || "";
+
+      if (!trimmedAnswer) {
+        setAnswerError(
+          "Please provide an answer before continuing.",
+        );
+
+        return;
+      }
+
+      setAnswerError("");
+
+      // Lock processing
+      if (processingRef) {
+        processingRef.current = true;
+      }
+
       try {
-        /*
-          SAVE CURRENT ANSWER
-        */
+        // --------------------------------
+        // SAVE CURRENT ANSWER
+        // --------------------------------
 
         await saveAnswer({
           interviewId:
@@ -59,111 +86,128 @@ export const questionAndAnswerHandler = ({
             currentQuestion,
 
           answer:
-            response?.trim() || "",
+            trimmedAnswer,
 
           audioUrl: "",
 
           timeUsed:
-            60 - timeLeft,
+            Math.max(
+              0,
+              60 - timeLeft,
+            ),
         });
 
-        /*
-          MORE QUESTIONS
-        */
+        // --------------------------------
+        // LAST QUESTION
+        // --------------------------------
 
         if (
-          currentQuestion <
+          currentQuestion >=
           totalQuestions
         ) {
-          setResponse("");
+          const answerAnalysis =
+            await analyzeAnswer({
+              interviewId:
+                mockInterview._id,
 
-          setTimeLeft(60);
+              questionNumber:
+                currentQuestion,
+            });
 
-          setCurrentQuestion(
-            (previous) =>
-              previous + 1,
+          const sessionAnalysis =
+            await analyzeSession(
+              mockInterview._id,
+            );
+
+          const completedResult =
+            await complete(
+              mockInterview._id,
+            );
+
+          navigation.navigate(
+            "SessionCompleted",
+            {
+              mockInterviewId:
+                mockInterview._id,
+
+              mockInterview:
+                completedResult?.mockInterview ||
+                sessionAnalysis?.mockInterview ||
+                answerAnalysis?.mockInterview ||
+                mockInterview,
+            },
           );
 
           return;
         }
 
-        /*
-          ALL QUESTIONS ANSWERED
-        */
+        // --------------------------------
+        // NEXT QUESTION
+        // --------------------------------
 
-        const sessionResult =
-          await analyzeSession(
-            mockInterview._id,
-          );
+        const nextQuestion =
+          currentQuestion + 1;
 
-        /*
-          MARK INTERVIEW COMPLETE
-        */
+        // Never allow a question
+        // beyond the total
+        if (
+          nextQuestion >
+          totalQuestions
+        ) {
+          return;
+        }
 
-        const completedResult =
-          await complete(
-            mockInterview._id,
-          );
+        setResponse("");
+        setTimeLeft(60);
 
-        /*
-          NAVIGATE TO RESULTS
-        */
-
-        navigation.navigate(
-          "SessionCompleted",
-          {
-            mockInterviewId:
-              mockInterview._id,
-
-            mockInterview:
-              completedResult?.mockInterview ||
-              sessionResult?.mockInterview ||
-              mockInterview,
-          },
+        setCurrentQuestion(
+          nextQuestion,
         );
       } catch (error) {
         console.error(
-          "Interview answer flow error:",
+          "Question and answer flow error:",
           error,
         );
 
-        throw error;
-      }
-    };
-
-  /*
-    =====================================================
-    TIMER EXPIRED
-    =====================================================
-  */
-
-  const handleTimeOut =
-    async () => {
-      if (timeLeft > 0) {
-        return;
-      }
-
-      try {
-        await handleSaveAndAnalyze();
-      } catch (error) {
-        console.error(
-          "Interview timeout error:",
-          error,
+        setAnswerError(
+          error?.message ||
+            "Something went wrong while saving your answer.",
         );
+      } finally {
+        // Unlock processing
+        if (processingRef) {
+          processingRef.current = false;
+        }
       }
     };
+
+  // --------------------------------
+  // TIMEOUT
+  // --------------------------------
+
+  const handleTimeOut = async () => {
+    if (timeLeft > 0) {
+      return;
+    }
+
+    if (
+      currentQuestion < 1 ||
+      currentQuestion >
+        totalQuestions
+    ) {
+      return;
+    }
+
+    await handleSaveAndContinue();
+  };
 
   return {
     questions,
-
     totalQuestions,
-
     currentQuestionData,
-
     currentQuestionText,
 
-    handleSaveAndAnalyze,
-
+    handleSaveAndContinue,
     handleTimeOut,
   };
 };

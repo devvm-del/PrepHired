@@ -14,39 +14,24 @@ export const interviewHandler = ({
   };
 
   const handleStartInterview = async () => {
-    if (!targetJob.trim()) {
-      setTargetJobError(
-        "Please enter the role you are targeting.",
-      );
-      return;
-    }
-
     try {
       const result = await create({
         targetJob: targetJob.trim(),
-        interviewCategory:
-          selectedInterviewCategory,
-        responseMode:
-          selectedResponseMode,
-        numberOfQuestions:
-          Number(selectedNumberOfQuestions),
+        interviewCategory: selectedInterviewCategory,
+        responseMode: selectedResponseMode,
+        numberOfQuestions: Number(selectedNumberOfQuestions),
       });
 
-      navigation.navigate(
-        "QuestionAndAnswer",
-        {
-          mockInterview:
-            result.mockInterview,
-          targetJob:
-            targetJob.trim(),
-          interviewCategory:
-            selectedInterviewCategory,
-          responseMode:
-            selectedResponseMode,
-          numberOfQuestions:
-            Number(selectedNumberOfQuestions),
-        },
-      );
+      const mockInterviewId = result.mockInterview?.id;
+
+      navigation.navigate("QuestionAndAnswer", {
+        mockInterviewId,
+        mockInterview: result.mockInterview,
+        targetJob: targetJob.trim(),
+        interviewCategory: selectedInterviewCategory,
+        responseMode: selectedResponseMode,
+        numberOfQuestions: Number(selectedNumberOfQuestions),
+      });
     } catch (error) {
       setTargetJobError(
         error?.errors?.targetJob ||

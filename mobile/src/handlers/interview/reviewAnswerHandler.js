@@ -16,7 +16,8 @@ export const reviewAnswerHandler = ({
         await getById(mockInterviewId);
 
       setInterview(
-        result?.mockInterview || null,
+        result?.mockInterview ||
+          null,
       );
     } catch (error) {
       console.error(

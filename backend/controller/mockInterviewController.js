@@ -3,6 +3,7 @@ const {
   generateInterviewQuestions,
   analyzeInterviewAnswer,
   analyzeInterviewSession,
+  validateTargetJob
 } = require("../services/ai/aiService");
 
 const createMockInterview = async (req, res) => {
@@ -20,6 +21,14 @@ const createMockInterview = async (req, res) => {
 
     if (!targetJob?.trim()) {
       errors.targetJob = "Please enter the role you are targeting.";
+    } else {
+      const isValidJob = await validateTargetJob({
+        targetJob: targetJob.trim(),
+      });
+
+      if (!isValidJob) {
+        errors.targetJob = "Please enter a valid job title.";
+      }
     }
 
     const allowedCategories = [

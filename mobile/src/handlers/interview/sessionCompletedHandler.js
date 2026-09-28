@@ -11,6 +11,7 @@ export const sessionCompletedHandler = ({
       setInterview(
         mockInterview || null,
       );
+
       return;
     }
 
@@ -18,7 +19,9 @@ export const sessionCompletedHandler = ({
       setLoading(true);
 
       const result =
-        await getById(mockInterviewId);
+        await getById(
+          mockInterviewId,
+        );
 
       setInterview(
         result?.mockInterview ||

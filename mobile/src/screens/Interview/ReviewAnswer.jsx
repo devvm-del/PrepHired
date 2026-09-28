@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useState,
@@ -19,7 +18,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import InterviewHeader from "../../components/InterviewHeader";
-import Button from "../../components/Button";
 
 import styles from "../../styles/global";
 
@@ -72,8 +70,11 @@ const ReviewAnswer = () => {
       {
         mockInterviewId,
         questionNumber,
-        totalQuestions: questions.length,
+        totalQuestions:
+          questions.length,
+
         question,
+
         analysis: question,
       },
     );
@@ -82,16 +83,24 @@ const ReviewAnswer = () => {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          styles.scrollContent
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
         <InterviewHeader
           navigation={navigation}
           interviewLabel="Review Answers"
           showTimer={false}
+          mockInterviewId={mockInterviewId}
+          navigateTo="SessionCompleted"
           goBack={true}
+          backIcon="back"
         />
 
+        {/* LOADING */}
         {loading ? (
           <View
             style={{
@@ -123,148 +132,30 @@ const ReviewAnswer = () => {
                 fontSize: 14,
               }}
             >
-              No interview answers are available.
+              No interview answers
+              are available.
             </Text>
           </View>
         ) : (
-          questions.map((question, index) => {
-            const questionNumber =
-              question.questionNumber ||
-              index + 1;
+          questions.map(
+            (question, index) => {
+              const questionNumber =
+                question.questionNumber ||
+                index + 1;
 
-            const score =
-              Number(question.score) || 0;
+              const score =
+                Number(
+                  question.score,
+                ) || 0;
 
-            const answer =
-              question.answer ||
-              "No answer provided.";
+              const answer =
+                question.answer ||
+                "No answer provided.";
 
-            return (
-              <View
-                key={`${questionNumber}-${index}`}
-                style={{
-                  backgroundColor: "#25252F",
-                  borderRadius: 16,
-                  padding: 18,
-                  marginBottom: 16,
-                }}
-              >
-                {/* QUESTION NUMBER */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 12,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#60A5FA",
-                      fontSize: 11,
-                      fontWeight: "800",
-                      letterSpacing: 1,
-                    }}
-                  >
-                    QUESTION {questionNumber}
-                  </Text>
-
-                  <View
-                    style={{
-                      backgroundColor: "#18181F",
-                      paddingHorizontal: 10,
-                      paddingVertical: 6,
-                      borderRadius: 8,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#F8FAFC",
-                        fontSize: 11,
-                        fontWeight: "800",
-                      }}
-                    >
-                      {score}%
-                    </Text>
-                  </View>
-                </View>
-
-                {/* QUESTION */}
-                <Text
-                  style={{
-                    color: "#F8FAFC",
-                    fontSize: 16,
-                    lineHeight: 24,
-                    fontWeight: "700",
-                    marginBottom: 16,
-                  }}
-                >
-                  {question.question}
-                </Text>
-
-                {/* ANSWER */}
-                <View
-                  style={{
-                    backgroundColor: "#18181F",
-                    borderRadius: 12,
-                    padding: 14,
-                    marginBottom: 14,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#71717A",
-                      fontSize: 10,
-                      fontWeight: "800",
-                      marginBottom: 7,
-                    }}
-                  >
-                    YOUR ANSWER
-                  </Text>
-
-                  <Text
-                    style={{
-                      color: "#A1A1AA",
-                      fontSize: 14,
-                      lineHeight: 21,
-                    }}
-                  >
-                    {answer}
-                  </Text>
-                </View>
-
-                {/* FEEDBACK */}
-                {question.feedback ? (
-                  <View
-                    style={{
-                      marginBottom: 14,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#F8FAFC",
-                        fontSize: 12,
-                        fontWeight: "800",
-                        marginBottom: 7,
-                      }}
-                    >
-                      AI FEEDBACK
-                    </Text>
-
-                    <Text
-                      style={{
-                        color: "#A1A1AA",
-                        fontSize: 13,
-                        lineHeight: 20,
-                      }}
-                    >
-                      {question.feedback}
-                    </Text>
-                  </View>
-                ) : null}
-
-                {/* VIEW FEEDBACK */}
+              return (
                 <TouchableOpacity
+                  key={`${questionNumber}-${index}`}
+                  activeOpacity={0.85}
                   onPress={() =>
                     handleOpenFeedback(
                       question,
@@ -272,36 +163,193 @@ const ReviewAnswer = () => {
                     )
                   }
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: "#18181F",
-                    borderRadius: 10,
-                    paddingVertical: 11,
+                    backgroundColor:
+                      "#25252F",
+                    borderRadius: 16,
+                    padding: 18,
+                    marginBottom: 16,
                   }}
                 >
-                  <Text
+                  {/* QUESTION NUMBER */}
+                  <View
                     style={{
-                      color: "#60A5FA",
-                      fontSize: 13,
-                      fontWeight: "700",
+                      flexDirection:
+                        "row",
+                      justifyContent:
+                        "space-between",
+                      alignItems:
+                        "center",
+                      marginBottom: 12,
                     }}
                   >
-                    View Detailed Feedback
+                    <Text
+                      style={{
+                        color: "#60A5FA",
+                        fontSize: 11,
+                        fontWeight:
+                          "800",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      QUESTION{" "}
+                      {questionNumber}
+                    </Text>
+
+                    <View
+                      style={{
+                        backgroundColor:
+                          "#18181F",
+                        paddingHorizontal:
+                          10,
+                        paddingVertical:
+                          6,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            "#F8FAFC",
+                          fontSize: 11,
+                          fontWeight:
+                            "800",
+                        }}
+                      >
+                        {score}%
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* QUESTION */}
+                  <Text
+                    style={{
+                      color: "#F8FAFC",
+                      fontSize: 16,
+                      lineHeight: 24,
+                      fontWeight:
+                        "700",
+                      marginBottom: 16,
+                    }}
+                  >
+                    {
+                      question.question
+                    }
                   </Text>
 
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color="#60A5FA"
+                  {/* ANSWER */}
+                  <View
                     style={{
-                      marginLeft: 5,
+                      backgroundColor:
+                        "#18181F",
+                      borderRadius: 12,
+                      padding: 14,
+                      marginBottom: 14,
                     }}
-                  />
+                  >
+                    <Text
+                      style={{
+                        color:
+                          "#71717A",
+                        fontSize: 10,
+                        fontWeight:
+                          "800",
+                        marginBottom: 7,
+                      }}
+                    >
+                      YOUR ANSWER
+                    </Text>
+
+                    <Text
+                      style={{
+                        color:
+                          "#A1A1AA",
+                        fontSize: 14,
+                        lineHeight:
+                          21,
+                      }}
+                    >
+                      {answer}
+                    </Text>
+                  </View>
+
+                  {/* AI FEEDBACK */}
+                  {question.feedback ? (
+                    <View
+                      style={{
+                        marginBottom: 14,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            "#F8FAFC",
+                          fontSize: 12,
+                          fontWeight:
+                            "800",
+                          marginBottom: 7,
+                        }}
+                      >
+                        AI FEEDBACK
+                      </Text>
+
+                      <Text
+                        style={{
+                          color:
+                            "#A1A1AA",
+                          fontSize: 13,
+                          lineHeight:
+                            20,
+                        }}
+                      >
+                        {
+                          question.feedback
+                        }
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* VIEW FEEDBACK */}
+                  <View
+                    style={{
+                      flexDirection:
+                        "row",
+                      alignItems:
+                        "center",
+                      justifyContent:
+                        "center",
+                      backgroundColor:
+                        "#18181F",
+                      borderRadius: 10,
+                      paddingVertical:
+                        11,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          "#60A5FA",
+                        fontSize: 13,
+                        fontWeight:
+                          "700",
+                      }}
+                    >
+                      View Detailed
+                      Feedback
+                    </Text>
+
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#60A5FA"
+                      style={{
+                        marginLeft: 5,
+                      }}
+                    />
+                  </View>
                 </TouchableOpacity>
-              </View>
-            );
-          })
+              );
+            },
+          )
         )}
       </ScrollView>
     </View>

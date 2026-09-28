@@ -1,3 +1,5 @@
+import React from "react";
+
 import {
   View,
   Text,
@@ -15,8 +17,6 @@ import InterviewHeader from "../../components/InterviewHeader";
 import Button from "../../components/Button";
 
 import styles from "../../styles/global";
-
-import useMockInterview from "../../hooks/useMockInterview";
 
 import {
   answerFeedbackHandler,
@@ -91,100 +91,123 @@ const AnswerFeedback = () => {
   const {
     mockInterviewId,
     questionNumber,
-    totalQuestions,
     question,
     analysis,
   } = route.params || {};
 
   const {
-    getById,
-    analyzeSession,
-    complete,
-    loading,
-  } = useMockInterview();
-
-  const {
     handleContinue,
   } = answerFeedbackHandler({
     mockInterviewId,
-    questionNumber,
-    totalQuestions,
     navigation,
-    getById,
-    analyzeSession,
-    complete,
   });
 
+  // --------------------------------
+  // SAFE DATA
+  // --------------------------------
+
   const feedback =
-    analysis?.feedback ||
-    "No additional feedback was provided.";
+    typeof analysis?.feedback === "string"
+      ? analysis.feedback
+      : "No additional feedback was provided.";
 
   const tone =
-    analysis?.toneAndModulation ||
-    "No tone and modulation feedback was provided.";
-
-  const wordChoice =
-    analysis?.wordChoiceSuggestions ||
-    "No word choice suggestions were provided.";
+    typeof analysis?.toneAndModulation ===
+    "string"
+      ? analysis.toneAndModulation
+      : "No tone and modulation feedback was provided.";
 
   const strengths =
     Array.isArray(analysis?.strengths)
-      ? analysis.strengths
+      ? analysis.strengths.filter(
+          (item) =>
+            typeof item === "string",
+        )
       : [];
 
   const improvements =
-    Array.isArray(analysis?.improvements)
-      ? analysis.improvements
+    Array.isArray(
+      analysis?.improvements,
+    )
+      ? analysis.improvements.filter(
+          (item) =>
+            typeof item === "string",
+        )
+      : [];
+
+  const wordChoiceSuggestions =
+    Array.isArray(
+      analysis?.wordChoiceSuggestions,
+    )
+      ? analysis.wordChoiceSuggestions
       : [];
 
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: 120,
+          },
+        ]}
+        showsVerticalScrollIndicator={
+          false
+        }
       >
+        {/* HEADER */}
+
         <InterviewHeader
           navigation={navigation}
           interviewLabel="Answer Feedback"
-          navigateTo="QuestionAndAnswer"
           showTimer={false}
+          mockInterviewId={
+            mockInterviewId
+          }
+          navigateTo="ReviewAnswer"
+          goBack={true}
+          backIcon="back"
         />
 
         {/* QUESTION */}
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 20,
-          }}
-        >
-          <Text
+
+        {question?.question ? (
+          <View
             style={{
-              color: "#60A5FA",
-              fontSize: 11,
-              fontWeight: "800",
-              letterSpacing: 1,
-              marginBottom: 9,
+              backgroundColor: "#25252F",
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 16,
             }}
           >
-            QUESTION {questionNumber}
-          </Text>
+            <Text
+              style={{
+                color: "#60A5FA",
+                fontSize: 11,
+                fontWeight: "800",
+                letterSpacing: 1,
+                marginBottom: 10,
+              }}
+            >
+              QUESTION{" "}
+              {questionNumber || ""}
+            </Text>
 
-          <Text
-            style={{
-              color: "#F8FAFC",
-              fontSize: 17,
-              lineHeight: 25,
-              fontWeight: "700",
-            }}
-          >
-            {question?.question ||
-              "Interview question"}
-          </Text>
-        </View>
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 17,
+                lineHeight: 25,
+                fontWeight: "700",
+              }}
+            >
+              {question.question}
+            </Text>
+          </View>
+        ) : null}
 
-        {/* SCORE CARDS */}
+        {/* SCORES */}
+
         <View
           style={{
             flexDirection: "row",
@@ -194,21 +217,64 @@ const AnswerFeedback = () => {
         >
           <ScoreCard
             title="CONTENT"
-            score={analysis?.contentScore}
+            score={
+              analysis?.contentScore
+            }
           />
 
           <ScoreCard
             title="CONFIDENCE"
-            score={analysis?.confidenceScore}
+            score={
+              analysis?.confidenceScore
+            }
           />
 
           <ScoreCard
             title="NATURAL"
-            score={analysis?.naturalScore}
+            score={
+              analysis?.naturalScore
+            }
           />
         </View>
 
-        {/* GENERAL FEEDBACK */}
+        {/* OVERALL SCORE */}
+
+        <View
+          style={{
+            backgroundColor: "#25252F",
+            borderRadius: 16,
+            padding: 18,
+            marginBottom: 16,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "#71717A",
+              fontSize: 10,
+              fontWeight: "800",
+              marginBottom: 8,
+            }}
+          >
+            OVERALL SCORE
+          </Text>
+
+          <Text
+            style={{
+              color: "#60A5FA",
+              fontSize: 38,
+              fontWeight: "900",
+            }}
+          >
+            {Number(
+              analysis?.score,
+            ) || 0}
+            %
+          </Text>
+        </View>
+
+        {/* FEEDBACK */}
+
         <View
           style={{
             backgroundColor: "#25252F",
@@ -240,6 +306,7 @@ const AnswerFeedback = () => {
         </View>
 
         {/* TONE */}
+
         <View
           style={{
             backgroundColor: "#25252F",
@@ -270,38 +337,183 @@ const AnswerFeedback = () => {
           </Text>
         </View>
 
-        {/* WORD CHOICE */}
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              color: "#F8FAFC",
-              fontSize: 13,
-              fontWeight: "800",
-              marginBottom: 10,
-            }}
-          >
-            WORD CHOICE SUGGESTIONS
-          </Text>
+        {/* WORD CHOICE SUGGESTIONS */}
 
-          <Text
+        {wordChoiceSuggestions.length >
+          0 && (
+          <View
             style={{
-              color: "#A1A1AA",
-              fontSize: 14,
-              lineHeight: 22,
+              backgroundColor: "#25252F",
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 16,
             }}
           >
-            {wordChoice}
-          </Text>
-        </View>
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 13,
+                fontWeight: "800",
+                marginBottom: 12,
+              }}
+            >
+              WORD CHOICE SUGGESTIONS
+            </Text>
+
+            {wordChoiceSuggestions.map(
+              (item, index) => {
+                const original =
+                  typeof item === "object"
+                    ? item?.original
+                    : "";
+
+                const suggestion =
+                  typeof item === "object"
+                    ? item?.suggestion
+                    : "";
+
+                const reason =
+                  typeof item === "object"
+                    ? item?.reason
+                    : "";
+
+                return (
+                  <View
+                    key={
+                      item?._id ||
+                      index
+                    }
+                    style={{
+                      backgroundColor:
+                        "#18181F",
+                      borderRadius: 12,
+                      padding: 14,
+                      marginBottom:
+                        index <
+                        wordChoiceSuggestions.length -
+                          1
+                          ? 10
+                          : 0,
+                    }}
+                  >
+                    {/* ORIGINAL */}
+
+                    <Text
+                      style={{
+                        color: "#71717A",
+                        fontSize: 10,
+                        fontWeight: "800",
+                        marginBottom: 5,
+                      }}
+                    >
+                      ORIGINAL
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: "#F8FAFC",
+                        fontSize: 14,
+                        lineHeight: 21,
+                        marginBottom: 12,
+                      }}
+                    >
+                      {original ||
+                        "No original phrase provided."}
+                    </Text>
+
+                    {/* SUGGESTION */}
+
+                    <Text
+                      style={{
+                        color: "#60A5FA",
+                        fontSize: 10,
+                        fontWeight: "800",
+                        marginBottom: 5,
+                      }}
+                    >
+                      SUGGESTION
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: "#F8FAFC",
+                        fontSize: 14,
+                        lineHeight: 21,
+                        marginBottom: 12,
+                      }}
+                    >
+                      {suggestion ||
+                        "No suggestion provided."}
+                    </Text>
+
+                    {/* REASON */}
+
+                    <Text
+                      style={{
+                        color: "#71717A",
+                        fontSize: 10,
+                        fontWeight: "800",
+                        marginBottom: 5,
+                      }}
+                    >
+                      WHY
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: "#A1A1AA",
+                        fontSize: 13,
+                        lineHeight: 20,
+                      }}
+                    >
+                      {reason ||
+                        "No reason provided."}
+                    </Text>
+                  </View>
+                );
+              },
+            )}
+          </View>
+        )}
+
+        {/* NO WORD SUGGESTIONS */}
+
+        {wordChoiceSuggestions.length ===
+          0 && (
+          <View
+            style={{
+              backgroundColor: "#25252F",
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 16,
+            }}
+          >
+            <Text
+              style={{
+                color: "#F8FAFC",
+                fontSize: 13,
+                fontWeight: "800",
+                marginBottom: 10,
+              }}
+            >
+              WORD CHOICE SUGGESTIONS
+            </Text>
+
+            <Text
+              style={{
+                color: "#71717A",
+                fontSize: 14,
+                lineHeight: 22,
+              }}
+            >
+              No word choice suggestions
+              were provided.
+            </Text>
+          </View>
+        )}
 
         {/* STRENGTHS */}
+
         {strengths.length > 0 && (
           <View
             style={{
@@ -322,37 +534,42 @@ const AnswerFeedback = () => {
               STRENGTHS
             </Text>
 
-            {strengths.map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  marginBottom: 9,
-                }}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={18}
-                  color="#60A5FA"
-                  style={{ marginRight: 8 }}
-                />
-
-                <Text
+            {strengths.map(
+              (item, index) => (
+                <View
+                  key={index}
                   style={{
-                    flex: 1,
-                    color: "#A1A1AA",
-                    fontSize: 14,
-                    lineHeight: 21,
+                    flexDirection: "row",
+                    marginBottom: 9,
                   }}
                 >
-                  {item}
-                </Text>
-              </View>
-            ))}
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color="#60A5FA"
+                    style={{
+                      marginRight: 8,
+                    }}
+                  />
+
+                  <Text
+                    style={{
+                      flex: 1,
+                      color: "#A1A1AA",
+                      fontSize: 14,
+                      lineHeight: 21,
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </View>
+              ),
+            )}
           </View>
         )}
 
         {/* IMPROVEMENTS */}
+
         {improvements.length > 0 && (
           <View
             style={{
@@ -373,50 +590,52 @@ const AnswerFeedback = () => {
               IMPROVEMENTS
             </Text>
 
-            {improvements.map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  marginBottom: 9,
-                }}
-              >
-                <Ionicons
-                  name="arrow-forward-circle"
-                  size={18}
-                  color="#60A5FA"
-                  style={{ marginRight: 8 }}
-                />
-
-                <Text
+            {improvements.map(
+              (item, index) => (
+                <View
+                  key={index}
                   style={{
-                    flex: 1,
-                    color: "#A1A1AA",
-                    fontSize: 14,
-                    lineHeight: 21,
+                    flexDirection: "row",
+                    marginBottom: 9,
                   }}
                 >
-                  {item}
-                </Text>
-              </View>
-            ))}
+                  <Ionicons
+                    name="arrow-forward-circle"
+                    size={18}
+                    color="#60A5FA"
+                    style={{
+                      marginRight: 8,
+                    }}
+                  />
+
+                  <Text
+                    style={{
+                      flex: 1,
+                      color: "#A1A1AA",
+                      fontSize: 14,
+                      lineHeight: 21,
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </View>
+              ),
+            )}
           </View>
         )}
 
-        
+        {/* CONTINUE */}
+
+        {handleContinue ? (
+          <Button
+            title="Continue"
+            onPress={handleContinue}
+            style={{
+              marginBottom: 20,
+            }}
+          />
+        ) : null}
       </ScrollView>
-      <Button
-        style={{ marginBottom: 65}}
-        title={
-          loading
-            ? "Loading..."
-            : questionNumber < totalQuestions
-              ? "Continue"
-              : "View Session Results"
-        }
-        onPress={handleContinue}
-        disabled={loading}
-      />
     </View>
   );
 };

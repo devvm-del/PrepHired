@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useState,
@@ -228,7 +227,16 @@ const SessionCompleted = () => {
                     0,
                 ) || 0;
 
+              const skillNames = [
+                "COMMUNICATION",
+                "TECHNICAL KNOWLEDGE",
+                "PROBLEM SOLVING",
+                "CONFIDENCE",
+                "RELEVANCE",
+              ];
+
               const name =
+                skillNames[index] ||
                 skill?.name ||
                 skill?.skill ||
                 `Skill ${index + 1}`;

@@ -2167,6 +2167,106 @@ Use exactly this structure:
         )
 
 
+class ValidateJobRequest(BaseModel):
+    targetJob: str
+
+
+@app.post("/validate-job")
+async def validate_job(
+    request: ValidateJobRequest
+):
+    try:
+        # -----------------------------
+        # VALIDATION
+        # -----------------------------
+
+        if not request.targetJob.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Target job is required."
+            )
+
+        # -----------------------------
+        # OPENROUTER PROMPT
+        # -----------------------------
+
+        prompt = f"""
+Determine if the following input is a valid job title or profession.
+
+Target Job:
+{request.targetJob}
+
+Return false for random gibberish, meaningless text,
+or input that is not a job.
+
+Return ONLY valid JSON:
+
+{{
+    "isValid": true
+}}
+
+If invalid:
+
+{{
+    "isValid": false
+}}
+"""
+
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        response_text = response.choices[0].message.content.strip()
+
+        # -----------------------------
+        # CLEAN JSON
+        # -----------------------------
+
+        if response_text.startswith("```"):
+            response_text = response_text.replace("```json", "")
+            response_text = response_text.replace("```", "")
+            response_text = response_text.strip()
+
+        result = json.loads(response_text)
+
+        # -----------------------------
+        # NORMALIZE RESULT
+        # -----------------------------
+
+        is_valid = result.get("isValid", False)
+
+        if not isinstance(is_valid, bool):
+            is_valid = False
+
+        return {
+            "success": True,
+            "isValid": is_valid
+        }
+
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=500,
+            detail="AI returned an invalid job validation format."
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print("Validate job error:", str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to validate job title."
+        )
+
+
 @app.get("/")
 async def root():
 

@@ -278,6 +278,48 @@ const analyzeInterviewSession = async ({
     throw new Error("Failed to analyze interview session");
   }
 };
+const validateTargetJob = async ({
+  targetJob,
+}) => {
+  try {
+    const response = await fetch(`${PYTHON_AI_URL}/validate-job`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        targetJob: targetJob || "",
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const error = new Error(
+        data?.detail?.message ||
+          data?.message ||
+          "Failed to validate target job",
+      );
+
+      error.status = response.status;
+      error.retryAfter = data?.detail?.retryAfter || null;
+
+      throw error;
+    }
+
+    console.log(
+      "AI Job Validation Response:",
+      JSON.stringify(data, null, 2),
+    );
+
+    return data.isValid;
+  } catch (error) {
+    console.error("Python AI service error:", error.message);
+
+    throw new Error("Failed to validate target job");
+  }
+};
+
 
 module.exports = {
   generateProfessionalSummary,
@@ -286,4 +328,5 @@ module.exports = {
   generateInterviewQuestions,
   analyzeInterviewAnswer,
   analyzeInterviewSession,
+  validateTargetJob
 };
