@@ -11,6 +11,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import IconTextInput from "../components/IconTextInput";
 import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
+import AppModal from "../components/AppModal";
 
 import styles from "../styles/global";
 
@@ -28,6 +29,9 @@ const Interview = () => {
 
   const [targetJob, setTargetJob] = useState("");
   const [targetJobError, setTargetJobError] = useState("");
+
+  const [modalMessage, setModalMessage] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
 
   const [selectedInterviewCategory, setSelectedInterviewCategory] =
     useState("All");
@@ -63,6 +67,8 @@ const Interview = () => {
     targetJob,
     setTargetJob,
     setTargetJobError,
+    setModalVisible,
+    setModalMessage,
     selectedInterviewCategory,
     selectedResponseMode,
     selectedNumberOfQuestions,
@@ -312,6 +318,12 @@ const Interview = () => {
       </ScrollView>
 
       <BottomNav active="interview"/>
+
+      <AppModal
+        visible={modalVisible}
+        message={modalMessage}
+        onClose={() => {setModalVisible(false)}}
+      />
     </View>
   );
 };

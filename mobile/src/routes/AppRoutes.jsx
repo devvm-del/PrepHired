@@ -25,6 +25,7 @@ import ResumePreview from "../screens/Resume/ResumePreview";
 
 import QuestionAndAnswer from "../screens/Interview/QuestionAndAnswer";
 import AnswerFeedback from "../screens/Interview/AnswerFeedback";
+import AnswerTextFeedback from "../screens/Interview/AnswerTextFeedback";
 import SessionCompleted from "../screens/Interview/SessionCompleted";
 import ReviewAnswer from "../screens/Interview/ReviewAnswer";
 
@@ -64,6 +65,7 @@ export default function AppRoutes() {
 
         <Stack.Screen name="QuestionAndAnswer" component={QuestionAndAnswer} />
         <Stack.Screen name="AnswerFeedback" component={AnswerFeedback} />
+        <Stack.Screen name="AnswerTextFeedback" component={AnswerTextFeedback} />
         <Stack.Screen name="SessionCompleted" component={SessionCompleted} />
         <Stack.Screen name="ReviewAnswer" component={ReviewAnswer} />
       </Stack.Navigator>

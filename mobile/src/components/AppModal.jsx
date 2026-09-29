@@ -144,6 +144,14 @@ export default function AppModal({ visible, message = "", onClose }) {
       };
     }
 
+    if (message.includes("Failed to create mock interview")) {
+      return {
+        icon: "sad-outline",
+        color: "#EF4444",
+        title: "Try Again",
+      };
+    }
+
     // Default error
     return {
       icon: "alert-circle-outline",

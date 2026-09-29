@@ -2,6 +2,8 @@ export const interviewHandler = ({
   targetJob,
   setTargetJob,
   setTargetJobError,
+  setModalVisible,
+  setModalMessage,
   selectedInterviewCategory,
   selectedResponseMode,
   selectedNumberOfQuestions,
@@ -22,6 +24,20 @@ export const interviewHandler = ({
         numberOfQuestions: Number(selectedNumberOfQuestions),
       });
 
+      if (!result.success) {
+        if (result.errors?.targetJob) {
+          setTargetJobError(result.errors.targetJob);
+          return;
+        }
+
+        setModalMessage(
+          result.message || "Failed to create mock interview"
+        );
+        setModalVisible(true);
+
+        return;
+      }
+
       const mockInterviewId = result.mockInterview?.id;
 
       navigation.navigate("QuestionAndAnswer", {
@@ -33,11 +49,10 @@ export const interviewHandler = ({
         numberOfQuestions: Number(selectedNumberOfQuestions),
       });
     } catch (error) {
-      setTargetJobError(
-        error?.errors?.targetJob ||
-          error?.message ||
-          "Failed to start mock interview.",
+      setModalMessage(
+        error?.message || "Failed to create mock interview"
       );
+      setModalVisible(true);
     }
   };
 

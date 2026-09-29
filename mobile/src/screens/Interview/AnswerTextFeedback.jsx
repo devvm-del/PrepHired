@@ -84,7 +84,7 @@ const ScoreCard = ({
   );
 };
 
-const AnswerFeedback = () => {
+const AnswerTextFeedback = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -222,18 +222,12 @@ const AnswerFeedback = () => {
           />
 
           <ScoreCard
-            title="CONFIDENCE"
+            title="CLARITY"
             score={
               analysis?.confidenceScore
             }
           />
 
-          <ScoreCard
-            title="NATURAL"
-            score={
-              analysis?.naturalScore
-            }
-          />
         </View>
 
         {/* OVERALL SCORE */}
@@ -304,37 +298,6 @@ const AnswerFeedback = () => {
           </Text>
         </View>
 
-        {/* TONE */}
-
-        <View
-          style={{
-            backgroundColor: "#25252F",
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              color: "#F8FAFC",
-              fontSize: 13,
-              fontWeight: "800",
-              marginBottom: 10,
-            }}
-          >
-            TONE & MODULATION
-          </Text>
-
-          <Text
-            style={{
-              color: "#A1A1AA",
-              fontSize: 14,
-              lineHeight: 22,
-            }}
-          >
-            {tone}
-          </Text>
-        </View>
 
         {/* WORD CHOICE SUGGESTIONS */}
 
@@ -623,20 +586,9 @@ const AnswerFeedback = () => {
           </View>
         )}
 
-        {/* CONTINUE */}
-
-        {handleContinue ? (
-          <Button
-            title="Continue"
-            onPress={handleContinue}
-            style={{
-              marginBottom: 20,
-            }}
-          />
-        ) : null}
       </ScrollView>
     </View>
   );
 };
 
-export default AnswerFeedback;
+export default AnswerTextFeedback;

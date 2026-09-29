@@ -54,6 +54,10 @@ const QuestionAndAnswer = () => {
     loading,
   } = useMockInterview();
 
+  // --------------------------------
+  // QUESTION STATE
+  // --------------------------------
+
   const [currentQuestion, setCurrentQuestion] =
     useState(1);
 
@@ -69,8 +73,15 @@ const QuestionAndAnswer = () => {
   const [isSpeaking, setIsSpeaking] =
     useState(false);
 
+  // --------------------------------
+  // REFS
+  // --------------------------------
+
   // Prevent double submission / timeout
   const processingRef = useRef(false);
+
+  // Prevent timeout from firing multiple times
+  const timeoutHandledRef = useRef(false);
 
   // --------------------------------
   // QUESTION HANDLER
@@ -105,17 +116,121 @@ const QuestionAndAnswer = () => {
   });
 
   // --------------------------------
+  // STOP SPEECH
+  // --------------------------------
+
+  const stopQuestionSpeech = async () => {
+    try {
+      await Speech.stop();
+    } catch (error) {
+      console.error(
+        "Speech stop error:",
+        error,
+      );
+    }
+
+    setIsSpeaking(false);
+  };
+
+  // --------------------------------
+  // SPEAK QUESTION
+  // --------------------------------
+
+  const speakQuestion = async () => {
+    if (!currentQuestionText) {
+      return;
+    }
+
+    try {
+      // Stop any speech that may still be playing
+      await Speech.stop();
+
+      setIsSpeaking(true);
+
+      Speech.speak(
+        currentQuestionText,
+        {
+          language: "en-US",
+          rate: 0.9,
+          pitch: 1.0,
+
+          onStart: () => {
+            setIsSpeaking(true);
+          },
+
+          onDone: () => {
+            setIsSpeaking(false);
+          },
+
+          onStopped: () => {
+            setIsSpeaking(false);
+          },
+
+          onError: (error) => {
+            console.error(
+              "Speech error:",
+              error,
+            );
+
+            setIsSpeaking(false);
+          },
+        },
+      );
+    } catch (error) {
+      console.error(
+        "Speech error:",
+        error,
+      );
+
+      setIsSpeaking(false);
+    }
+  };
+
+  // --------------------------------
   // RESET QUESTION STATE
   // --------------------------------
 
   useEffect(() => {
+    // Reset timer
     setTimeLeft(60);
+
+    // Reset answer
     setResponse("");
+
+    // Reset error
     setAnswerError("");
 
+    // Reset timeout protection
+    timeoutHandledRef.current = false;
+
+    // Stop previous question speech
     Speech.stop();
+
     setIsSpeaking(false);
   }, [currentQuestion]);
+
+  // --------------------------------
+  // AUTO PLAY QUESTION
+  // --------------------------------
+
+  useEffect(() => {
+    if (!currentQuestionText) {
+      return;
+    }
+
+    // Small delay to allow the new question
+    // to render before speech starts
+    const speechTimer = setTimeout(() => {
+      speakQuestion();
+    }, 300);
+
+    return () => {
+      clearTimeout(speechTimer);
+
+      Speech.stop();
+      setIsSpeaking(false);
+    };
+  }, [currentQuestionText]);
 
   // --------------------------------
   // TIMER
@@ -143,54 +258,80 @@ const QuestionAndAnswer = () => {
   }, [timeLeft]);
 
   // --------------------------------
+  // AUTO TIMEOUT
+  // --------------------------------
+
+  useEffect(() => {
+    if (timeLeft !== 0) {
+      return;
+    }
+
+    // Prevent timeout from being called
+    // more than once for the same question
+    if (timeoutHandledRef.current) {
+      return;
+    }
+
+    // Prevent timeout while another answer
+    // is already being processed
+    if (processingRef.current) {
+      return;
+    }
+
+    timeoutHandledRef.current = true;
+
+    const processTimeout = async () => {
+      // Stop question speech immediately
+      await stopQuestionSpeech();
+
+      try {
+        /*
+         * handleTimeOut should handle the timeout
+         * without requiring an answer.
+         *
+         * For a normal unanswered timeout:
+         * Question 1 -> Question 2
+         * Question 2 -> Question 3
+         * etc.
+         *
+         * On the final question, it should finish
+         * the interview according to your handler.
+         */
+        await handleTimeOut();
+      } catch (error) {
+        console.error(
+          "Timeout error:",
+          error,
+        );
+
+        // Allow another attempt if the handler failed
+        timeoutHandledRef.current = false;
+      }
+    };
+
+    processTimeout();
+  }, [timeLeft]);
+
+  // --------------------------------
   // REPLAY QUESTION
   // --------------------------------
 
-  const handleSpeakQuestion = async () => {
+  const handleReplayQuestion = async () => {
     if (!currentQuestionText) {
       return;
     }
 
-    try {
-      const speaking =
-        await Speech.isSpeakingAsync();
+    // Always restart the question speech
+    await speakQuestion();
+  };
 
-      if (speaking) {
-        await Speech.stop();
-        setIsSpeaking(false);
-        return;
-      }
+  // --------------------------------
+  // END INTERVIEW
+  // --------------------------------
 
-      setIsSpeaking(true);
-
-      Speech.speak(
-        currentQuestionText,
-        {
-          language: "en-US",
-          rate: 0.9,
-          pitch: 1.0,
-
-          onDone: () => {
-            setIsSpeaking(false);
-          },
-
-          onStopped: () => {
-            setIsSpeaking(false);
-          },
-
-          onError: () => {
-            setIsSpeaking(false);
-          },
-        },
-      );
-    } catch (error) {
-      console.error(
-        "Speech error:",
-        error,
-      );
-
-      setIsSpeaking(false);
-    }
+  const handleEndInterview = async () => {
+    // Stop speech before leaving the screen
+    await stopQuestionSpeech();
   };
 
   // --------------------------------
@@ -202,18 +343,6 @@ const QuestionAndAnswer = () => {
       Speech.stop();
     };
   }, []);
-
-  // --------------------------------
-  // TIMEOUT
-  // --------------------------------
-
-  useEffect(() => {
-    if (timeLeft !== 0) {
-      return;
-    }
-
-    handleTimeOut();
-  }, [timeLeft]);
 
   // --------------------------------
   // UI
@@ -239,8 +368,8 @@ const QuestionAndAnswer = () => {
           mockInterviewId={mockInterviewId}
           navigateTo="Interview"
           showTimer={true}
-          goBack={true}
           backIcon="exit"
+          onExit={handleEndInterview}
         />
 
         {/* QUESTION PROGRESS */}
@@ -289,8 +418,7 @@ const QuestionAndAnswer = () => {
                   : 0
               }%`,
               height: "100%",
-              backgroundColor:
-                "#2563EB",
+              backgroundColor: "#2563EB",
             }}
           />
         </View>
@@ -310,8 +438,7 @@ const QuestionAndAnswer = () => {
           <View
             style={{
               flexDirection: "row",
-              justifyContent:
-                "space-between",
+              justifyContent: "space-between",
               alignItems: "center",
               marginBottom: 12,
             }}
@@ -331,15 +458,12 @@ const QuestionAndAnswer = () => {
             {/* REPLAY BUTTON */}
 
             <TouchableOpacity
-              onPress={
-                handleSpeakQuestion
-              }
+              onPress={handleReplayQuestion}
               activeOpacity={0.7}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor:
-                  "#18181F",
+                backgroundColor: "#18181F",
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 borderRadius: 10,
@@ -347,11 +471,7 @@ const QuestionAndAnswer = () => {
               }}
             >
               <Ionicons
-                name={
-                  isSpeaking
-                    ? "stop-circle"
-                    : "volume-high"
-                }
+                name="volume-high"
                 size={18}
                 color="#60A5FA"
               />
@@ -364,9 +484,7 @@ const QuestionAndAnswer = () => {
                   marginLeft: 6,
                 }}
               >
-                {isSpeaking
-                  ? "Stop"
-                  : "Replay Question"}
+                Replay Question
               </Text>
             </TouchableOpacity>
           </View>
@@ -420,11 +538,9 @@ const QuestionAndAnswer = () => {
                   width: 70,
                   height: 70,
                   borderRadius: 35,
-                  backgroundColor:
-                    "#2563EB",
+                  backgroundColor: "#2563EB",
                   alignItems: "center",
-                  justifyContent:
-                    "center",
+                  justifyContent: "center",
                   marginBottom: 12,
                 }}
               >
@@ -464,8 +580,7 @@ const QuestionAndAnswer = () => {
               placeholderTextColor="#71717A"
               style={{
                 minHeight: 180,
-                backgroundColor:
-                  "#18181F",
+                backgroundColor: "#18181F",
                 borderRadius: 12,
                 padding: 15,
                 color: "#F8FAFC",
@@ -491,7 +606,7 @@ const QuestionAndAnswer = () => {
         </View>
       </ScrollView>
 
-      {/* BUTTON */}
+      {/* SAVE / SUBMIT BUTTON */}
 
       <Button
         style={{
@@ -500,14 +615,11 @@ const QuestionAndAnswer = () => {
         title={
           loading
             ? "Saving..."
-            : currentQuestion <
-                totalQuestions
-              ? "Save Answer"
-              : "Submit Answer"
+            : currentQuestion < totalQuestions
+            ? "Save Answer"
+            : "Submit Answer"
         }
-        onPress={
-          handleSaveAndContinue
-        }
+        onPress={handleSaveAndContinue}
         disabled={
           loading ||
           processingRef.current
