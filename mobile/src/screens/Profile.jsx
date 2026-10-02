@@ -45,7 +45,7 @@ const Profile = () => {
           navigation={navigation}
           style={{
             paddingHorizontal: 25,
-            paddingTop: 25,
+            paddingTop: 35,
             backgroundColor: "#25252F",
           }}
           navigateTo="Home"
@@ -112,7 +112,7 @@ const Profile = () => {
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("MyResumes")}>
             <Ionicons name="document-outline" size={22} color="#A1A1AA" />
 
             <Text style={styles.menuText}>My Resumes</Text>
@@ -120,7 +120,7 @@ const Profile = () => {
             <Ionicons name="chevron-forward" size={20} color="#999" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("InterviewHistory")}>
             <Ionicons name="time-outline" size={22} color="#A1A1AA" />
 
             <Text style={styles.menuText}>Interview History</Text>

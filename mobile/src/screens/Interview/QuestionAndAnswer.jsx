@@ -22,7 +22,7 @@ import * as Speech from "expo-speech";
 
 import InterviewHeader from "../../components/InterviewHeader";
 import Button from "../../components/Button";
-
+import LoadingModal from "../../components/LoadingModal";
 import styles from "../../styles/global";
 
 import useMockInterview from "../../hooks/useMockInterview";
@@ -53,10 +53,6 @@ const QuestionAndAnswer = () => {
     complete,
     loading,
   } = useMockInterview();
-
-  // --------------------------------
-  // QUESTION STATE
-  // --------------------------------
 
   const [currentQuestion, setCurrentQuestion] =
     useState(1);
@@ -114,6 +110,8 @@ const QuestionAndAnswer = () => {
 
     processingRef,
   });
+
+  const isAnalyzingLastQuestion = loading && currentQuestion === totalQuestions;
 
   // --------------------------------
   // STOP SPEECH
@@ -625,6 +623,14 @@ const QuestionAndAnswer = () => {
           processingRef.current
         }
       />
+
+      <LoadingModal
+        visible={isAnalyzingLastQuestion}
+        title="Analyzing Interview"
+        message="Please wait while AI analyzes your final answer and completes your interview."
+        icon="sparkles-outline"
+      />
+
     </View>
   );
 };

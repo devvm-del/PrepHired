@@ -11,13 +11,25 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/global";
 
-const ProfileHeader = ({ navigation, navigateTo, style }) => {
+const Header = ({
+  navigation,
+  resumeLabel,
+  navigateTo,
+  resumeId,
+  style,
+}) => {
+  const handleBack = () => {
+    navigation.navigate(navigateTo, {
+      resumeId,
+    });
+  };
+  const handleHome = () => {
+    navigation.navigate("Home");
+  };
+
   return (
     <View style={[styles.header, style]}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.navigate(navigateTo)}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <View>
           <Ionicons name="arrow-back-outline" size={28} color="#F8FAFC" />
         </View>
@@ -27,7 +39,7 @@ const ProfileHeader = ({ navigation, navigateTo, style }) => {
           position: "absolute",
           left: 0,
           right: 0,
-          top: 35,
+          top: 15,
           alignItems: "center",
           justifyContent: "center",
           pointerEvents: "none",
@@ -41,11 +53,16 @@ const ProfileHeader = ({ navigation, navigateTo, style }) => {
             fontSize: 20,
           }}
         >
-          Profile
+          {resumeLabel}
         </Text>
       </View>
+      <TouchableOpacity style={styles.backButton} onPress={handleHome}>
+        <View>
+          <Ionicons name="home-outline" size={28} color="#F8FAFC" />
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };
 
-export default ProfileHeader;
+export default Header;

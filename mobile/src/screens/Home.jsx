@@ -70,7 +70,7 @@ const Home = () => {
         <Text
           style={{
             color: "#F8FAFC",
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: "700",
             marginTop: 10,
           }}
@@ -86,7 +86,7 @@ const Home = () => {
           >
             <View style={styles.iconContainer}>
               <Ionicons
-                name="document-text-outline"
+                name="create-outline"
                 color="#F8FAFC"
                 size={24}
               />
@@ -108,6 +108,51 @@ const Home = () => {
             <Text style={styles.cardActionText}>Mock Interview</Text>
             <Text style={styles.cardActionSubtext}>Practice your skills</Text>
           </TouchableOpacity>
+        </View>
+         <View style={styles.quickActionsCard}>
+          <TouchableOpacity
+            style={[styles.cardAction, styles.primaryCard]}
+            onPress={() => navigation.navigate("MyResumes")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.iconContainer, styles.primaryIcon]}>
+              <Ionicons
+                name="document-text-outline"
+                color="#F8FAFC"
+                size={24}
+              />
+            </View>
+
+            <Text style={styles.cardActionText}>My Resumes</Text>
+            <Text style={styles.cardActionSubtext}>View your saved resumes</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cardAction}
+            onPress={() => navigation.navigate("InterviewHistory")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.iconContainer}>
+              <Ionicons name="time-outline" color="#F8FAFC" size={24} />
+            </View>
+
+            <Text style={styles.cardActionText}>Interview History</Text>
+            <Text style={styles.cardActionSubtext}>See past interviews</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text
+          style={{
+            color: "#F8FAFC",
+            fontSize: 18,
+            fontWeight: "700",
+            marginTop: 10,
+          }}
+        >
+          Recent Activity
+        </Text>
+        <View>
+          
         </View>
       </ScrollView>
       <BottomNav active="home" />

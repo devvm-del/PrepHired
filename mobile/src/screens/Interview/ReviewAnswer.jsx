@@ -65,17 +65,33 @@ const ReviewAnswer = () => {
     question,
     questionNumber,
   ) => {
+    const responseMode =
+      interview?.responseMode || "Text";
+
+    const feedbackScreen =
+      responseMode === "Audio"
+        ? "AnswerAudioFeedback"
+        : "AnswerTextFeedback";
+
     navigation.navigate(
-      "AnswerFeedback",
+      feedbackScreen,
       {
         mockInterviewId,
         questionNumber,
-        totalQuestions:
-          questions.length,
-
+        totalQuestions: questions.length,
         question,
-
-        analysis: question,
+        analysis: {
+          score: question.score,
+          contentScore: question.contentScore,
+          confidenceScore: question.confidenceScore,
+          naturalScore: question.naturalScore,
+          feedback: question.feedback,
+          toneAndModulation: question.toneAndModulation,
+          wordChoiceSuggestions:
+            question.wordChoiceSuggestions || [],
+          strengths: question.strengths || [],
+          improvements: question.improvements || [],
+        },
       },
     );
   };

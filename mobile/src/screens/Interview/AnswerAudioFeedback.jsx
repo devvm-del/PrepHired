@@ -84,7 +84,7 @@ const ScoreCard = ({
   );
 };
 
-const AnswerFeedback = () => {
+const AnswerAudioFeedback = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -623,20 +623,9 @@ const AnswerFeedback = () => {
           </View>
         )}
 
-        {/* CONTINUE */}
-
-        {handleContinue ? (
-          <Button
-            title="Continue"
-            onPress={handleContinue}
-            style={{
-              marginBottom: 20,
-            }}
-          />
-        ) : null}
       </ScrollView>
     </View>
   );
 };
 
-export default AnswerFeedback;
+export default AnswerAudioFeedback;

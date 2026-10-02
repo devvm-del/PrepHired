@@ -50,17 +50,10 @@ const mockInterviewSchema = new mongoose.Schema(
           required: true,
         },
 
-        // AI-generated question
         question: {
           type: String,
           required: true,
           trim: true,
-        },
-
-        responseMode: {
-          type: String,
-          enum: ["Text", "Audio"],
-          default: "Text",
         },
 
         answer: {

@@ -193,6 +193,7 @@ const analyzeInterviewAnswer = async ({
   interviewCategory,
   question,
   answer,
+  responseMode
 }) => {
   try {
     const response = await fetch(`${PYTHON_AI_URL}/analyze-interview-answer`, {
@@ -205,6 +206,7 @@ const analyzeInterviewAnswer = async ({
         interviewCategory: interviewCategory || "All",
         question: question || "",
         answer: answer || "",
+        responseMode: responseMode || "Text",
       }),
     });
 

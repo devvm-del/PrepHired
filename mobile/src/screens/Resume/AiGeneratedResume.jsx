@@ -1131,7 +1131,8 @@ const renderEducation = () => {
     );
   };
   */
- const renderProjects = () => {
+ 
+  const renderProjects = () => {
   const originalProjects =
     resume?.projects || [];
 
@@ -1276,7 +1277,7 @@ const renderEducation = () => {
        */
       if (
         !projectName &&
-        !description
+        !projectDescription
       ) {
         return null;
       }
@@ -1336,7 +1337,6 @@ const renderEducation = () => {
   );
 };
 
- 
 
 
   /*

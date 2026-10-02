@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Modal, Animated, Easing } from "react-native";
 
 import { useRoute } from "@react-navigation/native";
 
@@ -8,6 +8,7 @@ import TextInputMulLine from "../../components/TextInputMulLine";
 import IconTextInput from "../../components/IconTextInput";
 import Button from "../../components/Button";
 import AppModal from "../../components/AppModal";
+import LoadingModal from "../../components/LoadingModal";
 import { Ionicons } from "@expo/vector-icons";
 
 import styles from "../../styles/global";
@@ -168,6 +169,7 @@ const SummaryExtras = ({ navigation }) => {
             marginBottom: 10,
             opacity: loading ? 0.5 : 1,
           }}
+          disabled={generatingSummary || generatingResume}
         >
           <View
             style={{
@@ -453,6 +455,21 @@ const SummaryExtras = ({ navigation }) => {
           }
         }}
       />
+
+      <LoadingModal
+        visible={generatingSummary}
+        title="Generating Summary"
+        message="Please wait while AI creates your professional summary."
+        icon="sparkles-outline"
+      />
+
+      <LoadingModal
+        visible={generatingResume}
+        title="Generating Resume"
+        message="Please wait while we generate your resume."
+        icon="document-text-outline"
+      />
+
     </View>
   );
 };

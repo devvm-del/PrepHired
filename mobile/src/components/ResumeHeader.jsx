@@ -1,13 +1,5 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Button,
-} from "react-native";
-
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/global";
 
@@ -17,23 +9,44 @@ const ResumeHeader = ({
   navigateTo,
   resumeId,
   style,
+
+  rightIcon = "home-outline",
+  onRightPress,
+  rightIconDisabled = false,
 }) => {
   const handleBack = () => {
     navigation.navigate(navigateTo, {
       resumeId,
     });
   };
+
   const handleHome = () => {
     navigation.navigate("Home");
   };
 
+  const handleRightPress = () => {
+    if (onRightPress) {
+      onRightPress();
+    } else {
+      handleHome();
+    }
+  };
+
   return (
     <View style={[styles.header, style]}>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <View>
-          <Ionicons name="arrow-back-outline" size={28} color="#F8FAFC" />
-        </View>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={handleBack}
+      >
+        <Ionicons
+          name="arrow-back-outline"
+          size={28}
+          color="#F8FAFC"
+        />
       </TouchableOpacity>
+
+      {/* Header Title */}
       <View
         style={{
           position: "absolute",
@@ -56,10 +69,18 @@ const ResumeHeader = ({
           {resumeLabel}
         </Text>
       </View>
-      <TouchableOpacity style={styles.backButton} onPress={handleHome}>
-        <View>
-          <Ionicons name="home-outline" size={28} color="#F8FAFC" />
-        </View>
+
+      {/* Right Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={handleRightPress}
+        disabled={rightIconDisabled}
+      >
+        <Ionicons
+          name={rightIcon}
+          size={28}
+          color={rightIconDisabled ? "#94A3B8" : "#F8FAFC"}
+        />
       </TouchableOpacity>
     </View>
   );

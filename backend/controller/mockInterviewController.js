@@ -1,19 +1,32 @@
 const MockInterview = require("../models/mockInterview");
+
 const {
   generateInterviewQuestions,
   analyzeInterviewAnswer,
   analyzeInterviewSession,
-  validateTargetJob
+  validateTargetJob,
 } = require("../services/ai/aiService");
+
+// ============================================================
+// CREATE MOCK INTERVIEW
+// ============================================================
 
 const createMockInterview = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const { targetJob, interviewCategory, responseMode, numberOfQuestions } =
-      req.body;
+    const {
+      targetJob,
+      interviewCategory,
+      responseMode,
+      numberOfQuestions,
+    } = req.body;
 
     const errors = {};
+
+    // -----------------------------
+    // VALIDATION
+    // -----------------------------
 
     if (!userId) {
       errors.userId = "User authentication is required";
@@ -54,7 +67,11 @@ const createMockInterview = async (req, res) => {
 
     const allowedNumberOfQuestions = [5, 8, 12, "5", "8", "12"];
 
-    if (!numberOfQuestions) {
+    if (
+      numberOfQuestions === undefined ||
+      numberOfQuestions === null ||
+      numberOfQuestions === ""
+    ) {
       errors.numberOfQuestions = "Number of questions is required";
     } else if (!allowedNumberOfQuestions.includes(numberOfQuestions)) {
       errors.numberOfQuestions = "Invalid number of questions";
@@ -70,7 +87,10 @@ const createMockInterview = async (req, res) => {
 
     const questionCount = Number(numberOfQuestions);
 
-    // Generate questions using AI
+    // -----------------------------
+    // GENERATE QUESTIONS
+    // -----------------------------
+
     const questions = await generateInterviewQuestions({
       targetJob: targetJob.trim(),
       interviewCategory,
@@ -85,27 +105,50 @@ const createMockInterview = async (req, res) => {
       });
     }
 
+    // -----------------------------
+    // FORMAT QUESTIONS
+    // -----------------------------
+
     const formattedQuestions = questions.map((question, index) => ({
       questionNumber: index + 1,
+
       question:
-        typeof question === "string" ? question : question.question || "",
-      responseMode,
+        typeof question === "string"
+          ? question
+          : question.question || "",
+
       answer: "",
+
       audioUrl: "",
+
       timeLimit: 60,
+
       timeUsed: 0,
+
       status: "pending",
     }));
 
+    // -----------------------------
+    // CREATE INTERVIEW
+    // -----------------------------
+
     const mockInterview = await MockInterview.create({
       userId,
+
       targetJob: targetJob.trim(),
+
       interviewCategory,
+
       responseMode,
+
       numberOfQuestions: questionCount,
+
       currentQuestion: 1,
+
       status: "in-progress",
+
       questions: formattedQuestions,
+
       startedAt: new Date(),
     });
 
@@ -126,7 +169,10 @@ const createMockInterview = async (req, res) => {
   }
 };
 
+// ============================================================
 // GET MOCK INTERVIEW
+// ============================================================
+
 const getMockInterview = async (req, res) => {
   try {
     const { id } = req.params;
@@ -180,20 +226,36 @@ const getMockInterview = async (req, res) => {
   }
 };
 
+// ============================================================
 // SAVE INTERVIEW ANSWER
+// ============================================================
+
 const saveInterviewAnswer = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { questionNumber, answer, audioUrl, timeUsed } = req.body;
+    const {
+      questionNumber,
+      answer,
+      audioUrl,
+      timeUsed,
+    } = req.body;
 
     const errors = {};
+
+    // -----------------------------
+    // VALIDATION
+    // -----------------------------
 
     if (!id) {
       errors.id = "Mock interview ID is required";
     }
 
-    if (!questionNumber) {
+    if (
+      questionNumber === undefined ||
+      questionNumber === null ||
+      questionNumber === ""
+    ) {
       errors.questionNumber = "Question number is required";
     }
 
@@ -209,6 +271,11 @@ const saveInterviewAnswer = async (req, res) => {
       });
     }
 
+    // -----------------------------
+    // ONLY IN-PROGRESS INTERVIEWS
+    // CAN RECEIVE NEW ANSWERS
+    // -----------------------------
+
     const mockInterview = await MockInterview.findOne({
       _id: id,
       userId: req.user.id,
@@ -223,8 +290,15 @@ const saveInterviewAnswer = async (req, res) => {
       });
     }
 
+    // -----------------------------
+    // FIND QUESTION
+    // -----------------------------
+
+    const number = Number(questionNumber);
+
     const question = mockInterview.questions.find(
-      (item) => item.questionNumber === Number(questionNumber),
+      (item) =>
+        Number(item.questionNumber) === number,
     );
 
     if (!question) {
@@ -235,20 +309,46 @@ const saveInterviewAnswer = async (req, res) => {
       });
     }
 
-    question.answer = answer.trim();
+    // -----------------------------
+    // SAVE ANSWER
+    // -----------------------------
+
+    question.answer =
+      typeof answer === "string"
+        ? answer.trim()
+        : "";
 
     if (audioUrl !== undefined) {
       question.audioUrl = audioUrl;
     }
 
     if (timeUsed !== undefined) {
-      question.timeUsed = Number(timeUsed);
+      const parsedTimeUsed = Number(timeUsed);
+
+      if (Number.isFinite(parsedTimeUsed)) {
+        question.timeUsed = Math.max(
+          parsedTimeUsed,
+          0,
+        );
+      }
     }
 
     question.status = "answered";
+
     question.answeredAt = new Date();
 
-    mockInterview.currentQuestion = Number(questionNumber) + 1;
+    // -----------------------------
+    // UPDATE CURRENT QUESTION
+    // -----------------------------
+
+    if (
+      number >= mockInterview.currentQuestion
+    ) {
+      mockInterview.currentQuestion = Math.min(
+        number + 1,
+        mockInterview.numberOfQuestions,
+      );
+    }
 
     await mockInterview.save();
 
@@ -259,7 +359,10 @@ const saveInterviewAnswer = async (req, res) => {
       errors: {},
     });
   } catch (error) {
-    console.error("Save interview answer error:", error);
+    console.error(
+      "Save interview answer error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
@@ -269,20 +372,33 @@ const saveInterviewAnswer = async (req, res) => {
   }
 };
 
-// ANALYZE INTERVIEW ANSWER
+// ============================================================
+// ANALYZE ONE INTERVIEW ANSWER
+// ============================================================
+
 const analyzeAnswer = async (req, res) => {
   try {
     const { id } = req.params;
+
     const { questionNumber } = req.body;
 
     const errors = {};
+
+    // -----------------------------
+    // VALIDATION
+    // -----------------------------
 
     if (!id) {
       errors.id = "Mock interview ID is required";
     }
 
-    if (!questionNumber) {
-      errors.questionNumber = "Question number is required";
+    if (
+      questionNumber === undefined ||
+      questionNumber === null ||
+      questionNumber === ""
+    ) {
+      errors.questionNumber =
+        "Question number is required";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -293,10 +409,20 @@ const analyzeAnswer = async (req, res) => {
       });
     }
 
-    const mockInterview = await MockInterview.findOne({
-      _id: id,
-      userId: req.user.id,
-    });
+    // -----------------------------
+    // IMPORTANT:
+    // DO NOT CHECK STATUS HERE.
+    //
+    // Both in-progress and completed
+    // interviews can have answers
+    // analyzed.
+    // -----------------------------
+
+    const mockInterview =
+      await MockInterview.findOne({
+        _id: id,
+        userId: req.user.id,
+      });
 
     if (!mockInterview) {
       return res.status(404).json({
@@ -306,109 +432,285 @@ const analyzeAnswer = async (req, res) => {
       });
     }
 
-    const question = mockInterview.questions.find(
-      (item) => item.questionNumber === Number(questionNumber),
-    );
+    // -----------------------------
+    // FIND QUESTION
+    // -----------------------------
+
+    const number = Number(questionNumber);
+
+    if (!Number.isInteger(number) || number < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid question number",
+        errors: {},
+      });
+    }
+
+    const question =
+      mockInterview.questions.find(
+        (item) =>
+          Number(item.questionNumber) === number,
+      );
 
     if (!question) {
       return res.status(404).json({
         success: false,
-        message: "Interview question not found",
+        message:
+          "Interview question not found",
         errors: {},
       });
     }
 
-    if (!question.answer?.trim()) {
+    // -----------------------------
+    // VALIDATE ANSWER
+    // -----------------------------
+
+    if (
+      typeof question.answer !== "string" ||
+      !question.answer.trim()
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Interview answer is required",
+        message:
+          "Interview answer is required",
         errors: {},
       });
     }
 
-    const analysis = await analyzeInterviewAnswer({
-      targetJob: mockInterview.targetJob,
+    // -----------------------------
+    // NORMALIZE SCORE
+    // -----------------------------
 
-      interviewCategory: mockInterview.interviewCategory,
+    const normalizeScore = (value) => {
+      const number = Number(value);
 
-      question: question.question,
+      if (!Number.isFinite(number)) {
+        return 0;
+      }
 
-      answer: question.answer,
-    });
+      return Math.min(
+        Math.max(Math.round(number), 0),
+        100,
+      );
+    };
 
-    if (!analysis || typeof analysis !== "object") {
+    // -----------------------------
+    // CALL AI
+    // -----------------------------
+
+    const analysis =
+      await analyzeInterviewAnswer({
+        targetJob:
+          mockInterview.targetJob,
+
+        interviewCategory:
+          mockInterview.interviewCategory,
+
+        question:
+          question.question,
+
+        answer:
+          question.answer,
+
+        responseMode:
+          mockInterview.responseMode ||
+          "Text",
+      });
+
+    // -----------------------------
+    // VALIDATE AI RESPONSE
+    // -----------------------------
+
+    if (
+      !analysis ||
+      typeof analysis !== "object"
+    ) {
       return res.status(500).json({
         success: false,
-        message: "AI returned invalid answer analysis",
+        message:
+          "AI returned invalid answer analysis",
         errors: {},
       });
     }
 
-    question.score = analysis.score || 0;
+    // -----------------------------
+    // SAVE ANALYSIS
+    // -----------------------------
 
-    question.contentScore = analysis.contentScore || 0;
+    question.score =
+      normalizeScore(analysis.score);
 
-    question.confidenceScore = analysis.confidenceScore || 0;
+    question.contentScore =
+      normalizeScore(
+        analysis.contentScore,
+      );
 
-    question.naturalScore = analysis.naturalScore || 0;
+    question.confidenceScore =
+      normalizeScore(
+        analysis.confidenceScore,
+      );
 
-    question.feedback = analysis.feedback || "";
+    question.naturalScore =
+      normalizeScore(
+        analysis.naturalScore,
+      );
 
-    question.toneAndModulation = analysis.toneAndModulation || "";
+    question.feedback =
+      typeof analysis.feedback === "string"
+        ? analysis.feedback
+        : "";
 
-    question.wordChoiceSuggestions = analysis.wordChoiceSuggestions || [];
+    question.toneAndModulation =
+      typeof analysis.toneAndModulation ===
+      "string"
+        ? analysis.toneAndModulation
+        : "";
 
-    question.strengths = analysis.strengths || [];
+    question.wordChoiceSuggestions =
+      Array.isArray(
+        analysis.wordChoiceSuggestions,
+      )
+        ? analysis.wordChoiceSuggestions
+            .filter(
+              (item) =>
+                item &&
+                typeof item === "object",
+            )
+            .map((item) => ({
+              original:
+                typeof item.original ===
+                "string"
+                  ? item.original
+                  : "",
 
-    question.improvements = analysis.improvements || [];
+              suggestion:
+                typeof item.suggestion ===
+                "string"
+                  ? item.suggestion
+                  : "",
+
+              reason:
+                typeof item.reason ===
+                "string"
+                  ? item.reason
+                  : "",
+            }))
+        : [];
+
+    question.strengths =
+      Array.isArray(analysis.strengths)
+        ? analysis.strengths.filter(
+            (item) =>
+              typeof item === "string",
+          )
+        : [];
+
+    question.improvements =
+      Array.isArray(
+        analysis.improvements,
+      )
+        ? analysis.improvements.filter(
+            (item) =>
+              typeof item === "string",
+          )
+        : [];
 
     question.status = "analyzed";
+
     question.analyzedAt = new Date();
 
     await mockInterview.save();
 
     return res.status(200).json({
       success: true,
-      message: "Interview answer analyzed successfully",
-      analysis,
+
+      message:
+        "Interview answer analyzed successfully",
+
+      analysis: {
+        score: question.score,
+
+        contentScore:
+          question.contentScore,
+
+        confidenceScore:
+          question.confidenceScore,
+
+        naturalScore:
+          question.naturalScore,
+
+        feedback:
+          question.feedback,
+
+        toneAndModulation:
+          question.toneAndModulation,
+
+        wordChoiceSuggestions:
+          question.wordChoiceSuggestions,
+
+        strengths:
+          question.strengths,
+
+        improvements:
+          question.improvements,
+      },
+
       question,
-      mockInterview,
+
       errors: {},
     });
   } catch (error) {
-    console.error("Analyze interview answer error:", error);
+    console.error(
+      "Analyze interview answer error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to analyze interview answer",
+      message:
+        "Failed to analyze interview answer",
       errors: {},
     });
   }
 };
 
-// ANALYZE INTERVIEW SESSION
+// ============================================================
+// ANALYZE COMPLETE SESSION
+//
+// IMPORTANT:
+// This endpoint is NOT called by
+// completeMockInterview.
+//
+// It is a separate operation that can
+// be called later when the results page
+// needs overall analysis.
+// ============================================================
+
 const analyzeSession = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const errors = {};
-
     if (!id) {
-      errors.id = "Mock interview ID is required";
-    }
-
-    if (Object.keys(errors).length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
-        errors,
+        message:
+          "Mock interview ID is required",
+        errors: {},
       });
     }
 
-    const mockInterview = await MockInterview.findOne({
-      _id: id,
-      userId: req.user.id,
-    });
+    // -----------------------------
+    // FIND INTERVIEW
+    //
+    // Can be either in-progress or
+    // completed.
+    // -----------------------------
+
+    const mockInterview =
+      await MockInterview.findOne({
+        _id: id,
+        userId: req.user.id,
+      });
 
     if (!mockInterview) {
       return res.status(404).json({
@@ -418,126 +720,283 @@ const analyzeSession = async (req, res) => {
       });
     }
 
-    const analysis = await analyzeInterviewSession({
-      targetJob: mockInterview.targetJob,
+    // -----------------------------
+    // CHECK THAT QUESTIONS HAVE
+    // ANSWERS / ANALYSIS
+    // -----------------------------
 
-      interviewCategory: mockInterview.interviewCategory,
+    const answeredQuestions =
+      mockInterview.questions.filter(
+        (question) =>
+          typeof question.answer ===
+            "string" &&
+          question.answer.trim(),
+      );
 
-      questions: mockInterview.questions,
-    });
-
-    if (!analysis || typeof analysis !== "object") {
-      return res.status(500).json({
+    if (answeredQuestions.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: "AI returned invalid session analysis",
+        message:
+          "No interview answers are available for session analysis",
         errors: {},
       });
     }
 
-    mockInterview.overallScore = analysis.overallScore || 0;
+    // -----------------------------
+    // CALL AI
+    // -----------------------------
 
-    mockInterview.skillBreakdown = analysis.skillBreakdown || {};
+    const analysis =
+      await analyzeInterviewSession({
+        targetJob:
+          mockInterview.targetJob,
+
+        interviewCategory:
+          mockInterview.interviewCategory,
+
+        questions:
+          mockInterview.questions,
+      });
+
+    if (
+      !analysis ||
+      typeof analysis !== "object"
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "AI returned invalid session analysis",
+        errors: {},
+      });
+    }
+
+    // -----------------------------
+    // NORMALIZE SESSION SCORES
+    // -----------------------------
+
+    const normalizeScore = (value) => {
+      const number = Number(value);
+
+      if (!Number.isFinite(number)) {
+        return 0;
+      }
+
+      return Math.min(
+        Math.max(Math.round(number), 0),
+        100,
+      );
+    };
+
+    mockInterview.overallScore =
+      normalizeScore(
+        analysis.overallScore,
+      );
+
+    const skillBreakdown =
+      analysis.skillBreakdown || {};
+
+    mockInterview.skillBreakdown = {
+      communication:
+        normalizeScore(
+          skillBreakdown.communication,
+        ),
+
+      technicalKnowledge:
+        normalizeScore(
+          skillBreakdown.technicalKnowledge,
+        ),
+
+      problemSolving:
+        normalizeScore(
+          skillBreakdown.problemSolving,
+        ),
+
+      confidence:
+        normalizeScore(
+          skillBreakdown.confidence,
+        ),
+
+      relevance:
+        normalizeScore(
+          skillBreakdown.relevance,
+        ),
+    };
 
     await mockInterview.save();
 
     return res.status(200).json({
       success: true,
-      message: "Interview session analyzed successfully",
-      analysis,
+
+      message:
+        "Interview session analyzed successfully",
+
+      analysis: {
+        overallScore:
+          mockInterview.overallScore,
+
+        skillBreakdown:
+          mockInterview.skillBreakdown,
+      },
+
       mockInterview,
+
       errors: {},
     });
   } catch (error) {
-    console.error("Analyze interview session error:", error);
+    console.error(
+      "Analyze interview session error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to analyze interview session",
+      message:
+        "Failed to analyze interview session",
       errors: {},
     });
   }
 };
 
+// ============================================================
 // COMPLETE MOCK INTERVIEW
-const completeMockInterview = async (req, res) => {
+//
+// IMPORTANT:
+// THIS ONLY COMPLETES THE SESSION.
+//
+// It does NOT call analyzeSession().
+// ============================================================
+
+const completeMockInterview = async (
+  req,
+  res,
+) => {
   try {
     const { id } = req.params;
 
-    const errors = {};
-
     if (!id) {
-      errors.id = "Mock interview ID is required";
-    }
-
-    if (Object.keys(errors).length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
-        errors,
+        message:
+          "Mock interview ID is required",
+        errors: {},
       });
     }
 
-    const mockInterview = await MockInterview.findOne({
-      _id: id,
-      userId: req.user.id,
-      status: "in-progress",
-    });
+    // -----------------------------
+    // ONLY IN-PROGRESS INTERVIEW
+    // CAN BE COMPLETED
+    // -----------------------------
+
+    const mockInterview =
+      await MockInterview.findOne({
+        _id: id,
+        userId: req.user.id,
+        status: "in-progress",
+      });
 
     if (!mockInterview) {
       return res.status(404).json({
         success: false,
-        message: "Active mock interview not found",
+        message:
+          "Active mock interview not found",
         errors: {},
       });
     }
 
+    // -----------------------------
+    // COMPLETE ONLY
+    // -----------------------------
+
     mockInterview.status = "completed";
-    mockInterview.completedAt = new Date();
+
+    mockInterview.completedAt =
+      new Date();
 
     await mockInterview.save();
 
+    // -----------------------------
+    // DO NOT CALL:
+    //
+    // await analyzeSession(...)
+    //
+    // Session analysis is intentionally
+    // separate.
+    // -----------------------------
+
     return res.status(200).json({
       success: true,
-      message: "Mock interview completed successfully",
+
+      message:
+        "Mock interview completed successfully",
+
       mockInterview,
+
       errors: {},
     });
   } catch (error) {
-    console.error("Complete mock interview error:", error);
+    console.error(
+      "Complete mock interview error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to complete mock interview",
+      message:
+        "Failed to complete mock interview",
       errors: {},
     });
   }
 };
 
+// ============================================================
 // GET COMPLETED MOCK INTERVIEWS
-const getCompletedMockInterviews = async (req, res) => {
+// ============================================================
+
+const getCompletedMockInterviews = async (
+  req,
+  res,
+) => {
   try {
-    const mockInterviews = await MockInterview.find({
-      userId: req.user.id,
-      status: "completed",
-    }).sort({ updatedAt: -1 });
+    const mockInterviews =
+      await MockInterview.find({
+        userId: req.user.id,
+        status: "completed",
+      }).sort({
+        updatedAt: -1,
+      });
 
     return res.status(200).json({
       success: true,
-      message: "Completed mock interviews retrieved successfully",
+
+      message:
+        "Completed mock interviews retrieved successfully",
+
       mockInterviews,
+
       errors: {},
     });
   } catch (error) {
-    console.error("Get completed mock interviews error:", error);
+    console.error(
+      "Get completed mock interviews error:",
+      error,
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to retrieve completed mock interviews",
+
+      message:
+        "Failed to retrieve completed mock interviews",
+
       mockInterviews: [],
+
       errors: {},
     });
   }
 };
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
   createMockInterview,

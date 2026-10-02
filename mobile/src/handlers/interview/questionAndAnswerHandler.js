@@ -13,7 +13,6 @@ export const questionAndAnswerHandler = ({
 
   saveAnswer,
   analyzeAnswer,
-  analyzeSession,
   complete,
 
   processingRef,
@@ -31,7 +30,7 @@ export const questionAndAnswerHandler = ({
     currentQuestionData?.question || "";
 
   // --------------------------------
-  // SAVE / NEXT / COMPLETE
+  // SAVE / ANALYZE / NEXT / COMPLETE
   // --------------------------------
 
   const handleSaveAndContinue =
@@ -41,14 +40,12 @@ export const questionAndAnswerHandler = ({
         return;
       }
 
-      // Safety check
       if (!mockInterview?._id) {
         throw new Error(
           "Mock interview was not found.",
         );
       }
 
-      // Safety check
       if (!currentQuestionData) {
         throw new Error(
           "Question was not found.",
@@ -68,57 +65,47 @@ export const questionAndAnswerHandler = ({
 
       setAnswerError("");
 
-      // Lock processing
       if (processingRef) {
         processingRef.current = true;
       }
 
       try {
-        // --------------------------------
-        // SAVE CURRENT ANSWER
-        // --------------------------------
 
-        await saveAnswer({
-          interviewId:
-            mockInterview._id,
+        const savedResult =
+          await saveAnswer({
+            interviewId:
+              mockInterview._id,
 
-          questionNumber:
-            currentQuestion,
+            questionNumber:
+              currentQuestion,
 
-          answer:
-            trimmedAnswer,
+            answer:
+              trimmedAnswer,
 
-          audioUrl: "",
+            audioUrl: "",
 
-          timeUsed:
-            Math.max(
-              0,
-              60 - timeLeft,
-            ),
-        });
+            timeUsed:
+              Math.max(
+                0,
+                60 - timeLeft,
+              ),
+          });
 
-        // --------------------------------
-        // LAST QUESTION
-        // --------------------------------
+
+        const answerAnalysis =
+          await analyzeAnswer({
+            interviewId:
+              mockInterview._id,
+
+            questionNumber:
+              currentQuestion,
+          });
+
 
         if (
           currentQuestion >=
           totalQuestions
         ) {
-          const answerAnalysis =
-            await analyzeAnswer({
-              interviewId:
-                mockInterview._id,
-
-              questionNumber:
-                currentQuestion,
-            });
-
-          const sessionAnalysis =
-            await analyzeSession(
-              mockInterview._id,
-            );
-
           const completedResult =
             await complete(
               mockInterview._id,
@@ -132,8 +119,8 @@ export const questionAndAnswerHandler = ({
 
               mockInterview:
                 completedResult?.mockInterview ||
-                sessionAnalysis?.mockInterview ||
                 answerAnalysis?.mockInterview ||
+                savedResult?.mockInterview ||
                 mockInterview,
             },
           );
@@ -141,15 +128,9 @@ export const questionAndAnswerHandler = ({
           return;
         }
 
-        // --------------------------------
-        // NEXT QUESTION
-        // --------------------------------
-
         const nextQuestion =
           currentQuestion + 1;
 
-        // Never allow a question
-        // beyond the total
         if (
           nextQuestion >
           totalQuestions
@@ -158,6 +139,7 @@ export const questionAndAnswerHandler = ({
         }
 
         setResponse("");
+
         setTimeLeft(60);
 
         setCurrentQuestion(
@@ -171,19 +153,16 @@ export const questionAndAnswerHandler = ({
 
         setAnswerError(
           error?.message ||
-            "Something went wrong while saving your answer.",
+            "Something went wrong while saving or analyzing your answer.",
         );
       } finally {
-        // Unlock processing
+
         if (processingRef) {
           processingRef.current = false;
         }
       }
     };
 
-  // --------------------------------
-  // TIMEOUT
-  // --------------------------------
 
   const handleTimeOut = async () => {
     if (timeLeft > 0) {
@@ -192,21 +171,73 @@ export const questionAndAnswerHandler = ({
 
     if (
       currentQuestion < 1 ||
-      currentQuestion >
-        totalQuestions
+      currentQuestion > totalQuestions
     ) {
       return;
     }
 
-    await handleSaveAndContinue();
+    // Prevent duplicate processing
+    if (processingRef?.current) {
+      return;
+    }
+
+    if (processingRef) {
+      processingRef.current = true;
+    }
+
+    try {
+
+      if (currentQuestion >= totalQuestions) {
+        const completedResult =
+          await complete(mockInterview._id);
+
+        navigation.navigate(
+          "SessionCompleted",
+          {
+            mockInterviewId:
+              mockInterview._id,
+
+            mockInterview:
+              completedResult?.mockInterview ||
+              mockInterview,
+          },
+        );
+
+        return;
+      }
+
+      const nextQuestion =
+        currentQuestion + 1;
+
+      setResponse("");
+      setAnswerError("");
+      setTimeLeft(60);
+
+      setCurrentQuestion(nextQuestion);
+
+    } catch (error) {
+      console.error(
+        "Timeout error:",
+        error,
+      );
+
+      setAnswerError(
+        error?.message ||
+          "Something went wrong while moving to the next question.",
+      );
+    } finally {
+      if (processingRef) {
+        processingRef.current = false;
+      }
+    }
   };
+
 
   return {
     questions,
     totalQuestions,
     currentQuestionData,
     currentQuestionText,
-
     handleSaveAndContinue,
     handleTimeOut,
   };

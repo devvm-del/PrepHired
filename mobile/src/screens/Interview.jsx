@@ -1,10 +1,13 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
+  Modal,
+  Animated,
+  Easing,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
@@ -12,6 +15,7 @@ import IconTextInput from "../components/IconTextInput";
 import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
 import AppModal from "../components/AppModal";
+import LoadingModal from "../components/LoadingModal";
 
 import styles from "../styles/global";
 
@@ -109,7 +113,7 @@ const Interview = () => {
         </View>
 
         {/* TARGET JOB */}
-        <View >
+        <View>
           <Text
             style={{
               color: "#F8FAFC",
@@ -121,22 +125,21 @@ const Interview = () => {
           </Text>
 
           <IconTextInput
-            style={{marginTop: -15}}
+            style={{ marginTop: -15 }}
             icon="person-outline"
             placeholder="e.g. Software Developer"
             value={targetJob}
             onChangeText={handleTargetJobChange}
             error={targetJobError}
           />
-    
+
           {targetJobError ? (
-              <Text style={styles.textError}>{targetJobError}</Text>
-            ) : null}
-          
+            <Text style={styles.textError}>{targetJobError}</Text>
+          ) : null}
         </View>
 
         {/* INTERVIEW CATEGORY */}
-        <View style={{ marginBottom: 24, marginTop: 15}}>
+        <View style={{ marginBottom: 24, marginTop: 15 }}>
           <Text
             style={{
               color: "#F8FAFC",
@@ -152,7 +155,7 @@ const Interview = () => {
             style={{
               flexDirection: "row",
               flexWrap: "wrap",
-              justifyContent: 'space-between'
+              justifyContent: "space-between",
             }}
           >
             {interviewCategories.map((category) => {
@@ -317,13 +320,23 @@ const Interview = () => {
         />
       </ScrollView>
 
-      <BottomNav active="interview"/>
+      <BottomNav active="interview" />
 
       <AppModal
         visible={modalVisible}
         message={modalMessage}
-        onClose={() => {setModalVisible(false)}}
+        onClose={() => {
+          setModalVisible(false);
+        }}
       />
+      
+      <LoadingModal
+        visible={loading}
+        title="Creating Interview"
+        message="Please wait while we prepare your interview questions."
+        icon="sync-outline"
+      />
+      
     </View>
   );
 };
