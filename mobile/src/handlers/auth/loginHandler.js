@@ -22,8 +22,9 @@ const loginHandler = ({
       setEmailError(errors.email || "");
       setPasswordError(errors.password || "");
 
-      if (errors.general) {
-        setMessage(errors.general);
+      const generalMessage = errors.general || result.message;
+      if (generalMessage) {
+        setMessage(generalMessage);
         setModalVisible(true);
       }
 

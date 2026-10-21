@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Image,
   View,
@@ -12,9 +12,7 @@ import {
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
 import AppModal from "../components/AppModal";
-import BottomNav from "../components/BottomNav";
 import IconTextInput from "../components/IconTextInput";
 
 import loginHandler from "../handlers/auth/loginHandler";
@@ -219,6 +217,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 15,
   },
+
 
   title: {
     fontWeight: "bold",
