@@ -18,7 +18,7 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://prep-hired.vercel.app",
-    "https://prep-hired-eotdf3yc0-mark-vincent-manaois.vercel.app"
+    "https://prep-hired-e3835pra-mark-vincent-manaois.vercel.app"
   ],
   credentials: true
 }));
