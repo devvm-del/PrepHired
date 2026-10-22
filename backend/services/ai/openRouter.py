@@ -2217,10 +2217,6 @@ use a reasonable score based only on available evidence.
 problemSolving:
 Ability to explain reasoning, decisions, and solutions.
 
-confidence:
-Confidence demonstrated through the responses.
-Do not infer psychological traits.
-
 relevance:
 How relevant the answers are to the questions and target job.
 
@@ -2237,7 +2233,6 @@ Use exactly this structure:
         "communication": 0,
         "technicalKnowledge": 0,
         "problemSolving": 0,
-        "confidence": 0,
         "relevance": 0
     }}
 }}
@@ -2298,9 +2293,6 @@ Use exactly this structure:
             ),
             "problemSolving": normalize_score(
                 skill_breakdown.get("problemSolving", 0)
-            ),
-            "confidence": normalize_score(
-                skill_breakdown.get("confidence", 0)
             ),
             "relevance": normalize_score(
                 skill_breakdown.get("relevance", 0)

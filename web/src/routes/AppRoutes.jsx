@@ -1,4 +1,3 @@
-
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
@@ -16,7 +15,6 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
 
         <Route element={<RequireAuth />}>
@@ -29,7 +27,7 @@ const AppRoutes = () => {
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

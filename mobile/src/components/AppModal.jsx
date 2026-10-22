@@ -1,17 +1,23 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Modal, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function AppModal({ visible, message = "", onClose }) {
-  useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 2500);
+  const onCloseRef = useRef(onClose);
 
-      return () => clearTimeout(timer);
-    }
-  }, [visible, onClose]);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const timer = setTimeout(() => {
+      onCloseRef.current?.();
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [visible]);
 
   const getModalConfig = () => {
     // Login success

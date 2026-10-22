@@ -2,6 +2,7 @@
 // Unknown actions still show up, using the raw action text.
 const ACTIONS = {
   "auth.register": { label: "Signed up", tone: "info" },
+  "auth.email_verified": { label: "Email verified", tone: "good" },
   "auth.login": { label: "Logged in", tone: "good" },
   "auth.login_failed": { label: "Failed login", tone: "bad" },
   "auth.password_changed": { label: "Password changed", tone: "warn" },

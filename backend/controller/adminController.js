@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const mongoose = require('mongoose');
 const User = require("../models/user");
 const Resume = require("../models/resume");
 const MockInterview = require("../models/mockInterview");
@@ -506,7 +506,7 @@ const updateUserStatus = async (req, res) => {
     const user = await User.findOneAndUpdate(
       { _id: id, role: "user" },
       { isEnabled },
-      { new: true },
+      { returnDocument: "after" },
     ).select("fullName email isEnabled");
 
     if (!user) {
